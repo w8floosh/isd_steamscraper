@@ -20,8 +20,12 @@ def process_message(message):
     time.sleep(1)
 
 # Simulating users adding messages to the queue
-for i in range(5):
-    message = f"Message {i}"
-    # Instead of directly processing the message, send it as a Celery task
-    process_message.delay(message)
-    time.sleep(0.5)
+    
+if __name__ == '__main__':
+    app.start()
+    for i in range(5):
+        message = f"Message {i}"
+        # Instead of directly processing the message, send it as a Celery task
+        process_message.delay(message)
+        time.sleep(0.5)
+

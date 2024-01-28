@@ -5,36 +5,48 @@ Vagrant.configure("2") do |config|
   config.hostmanager.enabled = true
   config.hostmanager.manage_host = true
 
-  config.vm.define "lb01" do |lb01|
-    lb01.vm.box = "ubuntu/jammy64"
-    lb01.vm.hostname = "lb01"
-    lb01.vm.network "private_network", ip: "192.168.56.2"
-    lb01.vm.provider "virtualbox" do |vb| 
-      vb.memory = "1024"
-    end
-    ss01.vm.provision "shell", path: "provision.sh"
-  end
-  
-  config.vm.define "db01" do |db01|
-    db01.vm.box = "ubuntu/jammy64"
-    db01.vm.hostname = "db01"
-    db01.vm.network "private_network", ip: "192.168.56.128"
-    db01.vm.provider "virtualbox" do |vb| 
-      vb.memory = "1024"
-    end
-    ss01.vm.provision "shell", path: "provision.sh"
-  end
-  
-  config.vm.define "ss01" do |ss01|
-    ss01.vm.box = "ubuntu/jammy64"
-    ss01.vm.hostname = "ss01"
-    ss01.vm.network "private_network", ip: "192.168.56.8"
-    ss01.vm.provider "virtualbox" do |vb| 
+
+  config.vm.define "vm01" do |vm01|
+    vm01.vm.box = "ubuntu/jammy64"
+    vm01.vm.hostname = "vm01"
+    vm01.vm.network "private_network", ip: "192.168.56.2"
+    vm01.vm.provider "virtualbox" do |vb| 
       vb.memory = "2048"
-      vb.cpus = "2"
+      vb.cpus = "4"
     end
-    ss01.vm.provision "shell", path: "provision.sh"
+    vm01.vm.provision "shell", path: "provision.sh"
   end
+
+  # config.vm.define "lb01" do |lb01|
+  #   lb01.vm.box = "ubuntu/jammy64"
+  #   lb01.vm.hostname = "lb01"
+  #   lb01.vm.network "private_network", ip: "192.168.56.2"
+  #   lb01.vm.provider "virtualbox" do |vb| 
+  #     vb.memory = "1024"
+  #   end
+  #   ss01.vm.provision "shell", path: "provision.sh"
+  # end
+  
+  # config.vm.define "db01" do |db01|
+  #   db01.vm.box = "ubuntu/jammy64"
+  #   db01.vm.hostname = "db01"
+  #   db01.vm.network "private_network", ip: "192.168.56.128"
+  #   db01.vm.provider "virtualbox" do |vb| 
+  #     vb.memory = "1024"
+  #   end
+  #   ss01.vm.provision "shell", path: "provision.sh"
+  # end
+  
+  # config.vm.define "ss01" do |ss01|
+  #   ss01.vm.box = "ubuntu/jammy64"
+  #   ss01.vm.hostname = "ss01"
+  #   ss01.vm.network "private_network", ip: "192.168.56.8"
+  #   ss01.vm.provider "virtualbox" do |vb| 
+  #     vb.memory = "2048"
+  #     vb.cpus = "2"
+  #   end
+  #   ss01.vm.provision "shell", path: "provision.sh"
+  # end
 
   # config.vm.define "ss02" do |ss02|
   #   ss02.vm.box = "eurolinux-vagrant/centos-stream-9"

@@ -1,7 +1,7 @@
 DEBIAN_FRONTEND=noninteractive
-GIT_REPO=""
+#GIT_REPO="https://github.com/w8floosh/isd_steamscraper.git"
 sudo apt-get update
-sudo apt-get install ca-certificates curl
+sudo apt-get install ca-certificates curl -y
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -12,11 +12,13 @@ echo \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt-get update
 
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
 sudo systemctl start docker
 sudo systemctl enable docker
 
-git clone $GIT_REPO
-sudo docker-compose up
+#git clone $GIT_REPO /usr/src/app/steamscraper
+
+cd /vagrant
+sudo docker compose up -d
 
 
