@@ -1,0 +1,6 @@
+applicationType: messaging
+defaultPackage: isd.steamscraper
+testFramework: junit
+sourceLanguage: java
+buildTool: gradle
+features: [ app-name, gradle, hibernate-validator, http-client-test, java, java-application, jib, jobrunr-jobrunr, junit, junit-params, junit-platform-suite-engine, kafka, log4j2, micronaut-build, mockito, properties, readme, redis-lettuce, security-annotations, security-jwt, security-session, serialization-jackson, shade, test-resources ]
