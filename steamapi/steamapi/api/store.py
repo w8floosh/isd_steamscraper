@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 import requests
-from utils import SteamStoreAPI
+from ..utils import SteamStoreAPI
 
 api = Blueprint("store", __name__, url_prefix="/store")
 
