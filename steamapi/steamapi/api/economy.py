@@ -17,7 +17,7 @@ def get_asset_prices(id):
             request.args.key,
             appid=id,
             count=request.args.get("count"),
-            language=request.args.get("language"),
+            language=request.args.get("language", "english"),
         )
     )
 

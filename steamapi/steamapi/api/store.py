@@ -25,6 +25,7 @@ def store_search(query):
     return requests.get(
         SteamStoreAPI.build_url(
             SteamStoreAPI.GENERIC,
+            "storesearch",
             term=query,
             cc=request.args.get("cc", "US"),
             l=request.args.get("l", "english"),
@@ -37,6 +38,7 @@ def get_apps_in_genre(query):
     return requests.get(
         SteamStoreAPI.build_url(
             SteamStoreAPI.GENERIC,
+            "getappsingenre",
             genre=query,
             cc=request.args.get("cc", "US"),
             l=request.args.get("l", "english"),
@@ -49,6 +51,7 @@ def get_apps_in_category(query):
     return requests.get(
         SteamStoreAPI.build_url(
             SteamStoreAPI.GENERIC,
+            "getappsincategory",
             category=query,
             cc=request.args.get("cc", "US"),
             l=request.args.get("l", "english"),

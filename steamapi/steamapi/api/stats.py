@@ -58,7 +58,7 @@ def get_game_user_stats(player):
             request.args.key,
             steamid=player,
             appid=request.args.get("appid"),
-            l=request.args.get("l"),
+            l=request.args.get("l", "english"),
         )
     )
 
@@ -73,7 +73,7 @@ def get_player_achievements(player):
             request.args.key,
             steamid=player,
             appid=request.args.get("appid"),
-            l=request.args.get("l"),
+            l=request.args.get("l", "english"),
         )
     )
 
