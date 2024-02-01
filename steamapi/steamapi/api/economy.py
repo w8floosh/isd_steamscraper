@@ -1,7 +1,7 @@
 import requests, json
 from datetime import datetime, timezone
 from flask import Blueprint, request
-from utils import SteamWebAPI, SteamworksAPI
+from ..utils import SteamWebAPI, SteamworksAPI
 
 api = Blueprint("economy", __name__, url_prefix="/economy")
 _trading = Blueprint("trading", __name__, url_prefix="/trading")

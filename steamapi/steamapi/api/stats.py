@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 import requests
-from utils import SteamWebAPI
+from ..utils import SteamWebAPI
 
 api = Blueprint("stats", __name__, url_prefix="/stats")
 _players = Blueprint("players", __name__, url_prefix="/players")
