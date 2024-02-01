@@ -1,10 +1,8 @@
 import time
-import os
+from os import environ
 from celery import Celery
-from flask import Flask
 
-# Create a Celery application
-broker_url = os.environ.get("CELERY_BROKER_URL")
+broker_url = environ.get("CELERY_BROKER_URL")
 app = Celery("tasks", broker=broker_url)
 
 
@@ -20,6 +18,8 @@ def process_message(message):
 
 if __name__ == "__main__":
     app.start()
+
+    # load all app data and put in Redis cache store
     for i in range(5):
         message = f"Message {i}"
         # Instead of directly processing the message, send it as a Celery task
