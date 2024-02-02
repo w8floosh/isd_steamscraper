@@ -1,15 +1,18 @@
 from flask import Blueprint, request
 import requests
-from ..utils import SteamStoreAPI, SteamworksAPI
+from ..utils import SteamStoreAPI, SteamworksAPI, check_response, header_configuration
+from sys import stderr
 
 api = Blueprint("store", __name__, url_prefix="/store")
 
 
 @api.route("/")
 def get_app_list():
-    return requests.get(
-        SteamworksAPI.build_url(
-            SteamworksAPI.STORE, "GetAppList", "1", request.args.key
+    return check_response(
+        requests.get(
+            SteamworksAPI.build_url(
+                SteamworksAPI.STORE.value, "GetAppList", "1", request.args.get("key")
+            )
         )
     )
 
@@ -17,52 +20,60 @@ def get_app_list():
 @api.route("/<id>/details")
 def get_app_details(id):
     """cannot execute for multiple apps, inconsistent behavior"""
-    return requests.get(
-        SteamStoreAPI.build_url(
-            SteamStoreAPI.GENERIC,
-            "appdetails",
-            appids=id,
-            filters=request.args.get("filters"),
-            cc=request.args.get("cc", "US"),
-            language=request.args.get("language", "english"),
+    return check_response(
+        requests.get(
+            SteamStoreAPI.build_url(
+                SteamStoreAPI.GENERIC.value,
+                "appdetails",
+                appids=id,
+                filters=request.args.get("filters"),
+                cc=request.args.get("cc", "US"),
+                language=request.args.get("language", "english"),
+            ),
         )
     )
 
 
 @api.route("/<query>")
 def store_search(query):
-    return requests.get(
-        SteamStoreAPI.build_url(
-            SteamStoreAPI.GENERIC,
-            "storesearch",
-            term=query,
-            cc=request.args.get("cc", "US"),
-            l=request.args.get("l", "english"),
+    return check_response(
+        requests.get(
+            SteamStoreAPI.build_url(
+                SteamStoreAPI.GENERIC.value,
+                "storesearch",
+                term=query,
+                cc=request.args.get("cc", "US"),
+                l=request.args.get("l", "english"),
+            )
         )
     )
 
 
 @api.route("/genre/<query>")
 def get_apps_in_genre(query):
-    return requests.get(
-        SteamStoreAPI.build_url(
-            SteamStoreAPI.GENERIC,
-            "getappsingenre",
-            genre=query,
-            cc=request.args.get("cc", "US"),
-            l=request.args.get("l", "english"),
+    return check_response(
+        requests.get(
+            SteamStoreAPI.build_url(
+                SteamStoreAPI.GENERIC,
+                "getappsingenre",
+                genre=query,
+                cc=request.args.get("cc", "US"),
+                l=request.args.get("l", "english"),
+            )
         )
     )
 
 
 @api.route("/category/<query>")
 def get_apps_in_category(query):
-    return requests.get(
-        SteamStoreAPI.build_url(
-            SteamStoreAPI.GENERIC,
-            "getappsincategory",
-            category=query,
-            cc=request.args.get("cc", "US"),
-            l=request.args.get("l", "english"),
+    return check_response(
+        requests.get(
+            SteamStoreAPI.build_url(
+                SteamStoreAPI.GENERIC,
+                "getappsincategory",
+                category=query,
+                cc=request.args.get("cc", "US"),
+                l=request.args.get("l", "english"),
+            )
         )
     )
