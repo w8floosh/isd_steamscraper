@@ -1,7 +1,7 @@
 import requests, json
 from datetime import datetime, timezone
 from flask import Blueprint, request
-from ..utils import SteamWebAPI, SteamworksAPI
+from ..utils import SteamWebAPI, SteamworksAPI, check_response, header_configuration
 
 api = Blueprint("economy", __name__, url_prefix="/economy")
 _trading = Blueprint("trading", __name__, url_prefix="/trading")
@@ -9,15 +9,18 @@ _trading = Blueprint("trading", __name__, url_prefix="/trading")
 
 @api.route("/assets/<id>/prices", methods=["GET"])
 def get_asset_prices(id):
-    return requests.get(
-        SteamWebAPI.build_url(
-            SteamWebAPI.ECONOMY,
-            "GetAssetPrices",
-            "0001",
-            request.args.key,
-            appid=id,
-            count=request.args.get("count"),
-            language=request.args.get("language", "english"),
+    return check_response(
+        requests.get(
+            SteamWebAPI.build_url(
+                SteamWebAPI.ECONOMY.value,
+                "GetAssetPrices",
+                "0001",
+                request.args.get("key"),
+                appid=id,
+                count=request.args.get("count"),
+                language=request.args.get("language", "english"),
+            ),
+            headers=header_configuration,
         )
     )
 
@@ -36,13 +39,15 @@ def get_trade_history():
         "include_failed": request.args.get("include_failed", "false"),
         "include_total": request.args.get("include_total", "true"),
     }
-    return requests.get(
-        SteamworksAPI.build_url(
-            SteamworksAPI.ECONOMY,
-            "GetTradeHistory",
-            "0001",
-            request.args.key,
-            input_json=json.dumps(input),
+    return check_response(
+        requests.get(
+            SteamworksAPI.build_url(
+                SteamworksAPI.ECONOMY.value,
+                "GetTradeHistory",
+                "0001",
+                request.args.get("key"),
+                input_json=json.dumps(input),
+            )
         )
     )
 
@@ -50,13 +55,15 @@ def get_trade_history():
 @_trading.route("/offers/<id>", methods=["GET"])
 def get_trade_offer(id):
     input = {"tradeofferid": id, "language": request.args.get("language", "en")}
-    return requests.get(
-        SteamworksAPI.build_url(
-            SteamworksAPI.ECONOMY,
-            "GetTradeOffer",
-            "0001",
-            request.args.key,
-            input_json=json.dumps(input),
+    return check_response(
+        requests.get(
+            SteamworksAPI.build_url(
+                SteamworksAPI.ECONOMY.value,
+                "GetTradeOffer",
+                "0001",
+                request.args.get("key"),
+                input_json=json.dumps(input),
+            )
         )
     )
 
@@ -72,13 +79,15 @@ def get_trade_offers():
         "historical_only": request.args.get("historical_only", "false"),
         "time_historical_cutoff": request.args.get("time_historical_cutoff", 0),
     }
-    return requests.get(
-        SteamworksAPI.build_url(
-            SteamworksAPI.ECONOMY,
-            "GetTradeOffers",
-            "0001",
-            request.args.key,
-            input_json=json.dumps(input),
+    return check_response(
+        requests.get(
+            SteamworksAPI.build_url(
+                SteamworksAPI.ECONOMY.value,
+                "GetTradeOffers",
+                "0001",
+                request.args.get("key"),
+                input_json=json.dumps(input),
+            )
         )
     )
 
