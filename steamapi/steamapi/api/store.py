@@ -1,8 +1,17 @@
 from flask import Blueprint, request
 import requests
-from ..utils import SteamStoreAPI
+from ..utils import SteamStoreAPI, SteamworksAPI
 
 api = Blueprint("store", __name__, url_prefix="/store")
+
+
+@api.route("/")
+def get_app_list():
+    return requests.get(
+        SteamworksAPI.build_url(
+            SteamworksAPI.STORE, "GetAppList", "1", request.args.key
+        )
+    )
 
 
 @api.route("/<id>/details")
