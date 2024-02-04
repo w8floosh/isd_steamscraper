@@ -1,6 +1,6 @@
 FROM python:latest
 
-RUN pip install celery redis && mkdir -p /usr/src/app/ && adduser celery -u 3001
+RUN pip install -U celery[redis] redis && mkdir -p /usr/src/app/ && adduser celery -u 3001
 
 COPY ./api /usr/src/app/
 

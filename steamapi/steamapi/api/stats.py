@@ -55,17 +55,17 @@ def get_no_current_players(id):
 
 
 @_players.route("/<player>", methods=["GET"])
-def get_game_user_stats(player):
+def get_game_user_stats(player, **kwargs):
     return check_response(
         requests.get(
             SteamWebAPI.build_url(
                 SteamWebAPI.STATS.value,
                 "GetUserStatsForGame",
                 "0002",
-                request.args.get("key"),
+                request.args.get("key", kwargs.get("key")),
                 steamid=player,
-                appid=request.args.get("appid", "10"),
-                l=request.args.get("l", "english"),
+                appid=request.args.get("appid", kwargs.get("appid", "10")),
+                l=request.args.get("l", kwargs.get("l", "english")),
             )
         )
     )
