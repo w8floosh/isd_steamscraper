@@ -11,14 +11,19 @@ def get_app_list():
     return check_response(
         requests.get(
             SteamworksAPI.build_url(
-                SteamworksAPI.STORE.value, "GetAppList", "1", request.args.get("key")
+                SteamworksAPI.STORE.value,
+                "GetAppList",
+                "1",
+                request.args.get("key"),
+                max_results=request.args.get("max_results", 50000),
+                last_appid=request.args.get("last_appid", 10),
             )
         )
     )
 
 
 @api.route("/<id>/details")
-def get_app_details(id):
+def get_app_details(id, **kwargs):
     """cannot execute for multiple apps, inconsistent behavior"""
     return check_response(
         requests.get(
@@ -26,9 +31,11 @@ def get_app_details(id):
                 SteamStoreAPI.GENERIC.value,
                 "appdetails",
                 appids=id,
-                filters=request.args.get("filters"),
-                cc=request.args.get("cc", "US"),
-                language=request.args.get("language", "english"),
+                filters=request.args.get("filters", kwargs.get("filters")),
+                cc=request.args.get("cc", kwargs.get("cc", "US")),
+                language=request.args.get(
+                    "language", kwargs.get("language", "english")
+                ),
             ),
         )
     )

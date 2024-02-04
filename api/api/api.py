@@ -1,7 +1,6 @@
 import time
 import os
 from celery import Celery
-from flask import Flask
 
 # Create a Celery application
 broker_url = os.environ.get("CELERY_BROKER_URL")
