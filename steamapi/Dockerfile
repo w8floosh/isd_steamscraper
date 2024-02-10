@@ -1,6 +1,6 @@
 FROM python:latest
-
-RUN pip install celery redis flask && mkdir -p /usr/src/app/ && adduser celery -u 3001
+ARG pwd=insert_password_here
+RUN pip install aioredis quart && mkdir -p /usr/src/app/ && sudo useradd -m quart -u 3001 &&  sudo chpasswd quart:$
 
 COPY ./steamapi /usr/src/app/
 
@@ -10,4 +10,4 @@ WORKDIR /usr/src/app
 
 ENTRYPOINT [ "python3" ]
 #CMD ["-m", "celery", "-A", "api", "worker", "--loglevel=info", "--uid=3001"]
-CMD ["-m", "steamapi"]
+CMD ["-m", "quart", "run"]

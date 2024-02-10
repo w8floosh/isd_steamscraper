@@ -1,6 +1,9 @@
-from flask import Blueprint, request
-import requests
-from ..utils import SteamWebAPI, check_response
+from quart import Blueprint, request
+from httpx import AsyncClient
+from steamapi.api.types import SteamWebAPI
+from steamapi.api.utils import check_response
+from steamapi.broker.types import RedisCacheKeyPattern
+from steamapi.broker.utils import read_cache
 
 api = Blueprint("stats", __name__, url_prefix="/stats")
 _players = Blueprint("players", __name__, url_prefix="/players")
@@ -8,9 +11,11 @@ _apps = Blueprint("apps", __name__, url_prefix="/apps")
 
 
 @_apps.route("/<id>", methods=["GET"])
-def get_game_stats(id):
-    return check_response(
-        requests.get(
+async def get_game_stats(id, **kwargs):
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient()
+    result = check_response(
+        await client.get(
             SteamWebAPI.build_url(
                 SteamWebAPI.STATS.value,
                 "GetGlobalStatsForGame",
@@ -22,12 +27,17 @@ def get_game_stats(id):
             )
         )
     )
+    if injected_client is None:
+        await client.aclose()
+    return result
 
 
 @_apps.route("/<id>/achievements", methods=["GET"])
-def get_app_global_achievement_percentages(id):
-    return check_response(
-        requests.get(
+async def get_app_global_achievement_percentages(id, **kwargs):
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient()
+    result = check_response(
+        await client.get(
             SteamWebAPI.build_url(
                 SteamWebAPI.STATS.value,
                 "GetGlobalAchievementPercentagesForApp",
@@ -37,12 +47,17 @@ def get_app_global_achievement_percentages(id):
             )
         )
     )
+    if injected_client is None:
+        await client.aclose()
+    return result
 
 
 @_apps.route("/<id>/current", methods=["GET"])
-def get_no_current_players(id):
-    return check_response(
-        requests.get(
+async def get_no_current_players(id, **kwargs):
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient()
+    result = check_response(
+        await client.get(
             SteamWebAPI.build_url(
                 SteamWebAPI.STATS.value,
                 "GetNumberOfCurrentPlayers",
@@ -52,12 +67,19 @@ def get_no_current_players(id):
             )
         )
     )
+    if injected_client is None:
+        await client.aclose()
+    return result
 
 
 @_players.route("/<player>", methods=["GET"])
-def get_game_user_stats(player, **kwargs):
-    return check_response(
-        requests.get(
+@read_cache(RedisCacheKeyPattern.USER_DATA, "stats")
+async def get_game_user_stats(player, **kwargs):
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient()
+
+    result = check_response(
+        await client.get(
             SteamWebAPI.build_url(
                 SteamWebAPI.STATS.value,
                 "GetUserStatsForGame",
@@ -69,12 +91,20 @@ def get_game_user_stats(player, **kwargs):
             )
         )
     )
+    result["appid"] = request.args.get("appid", kwargs.get("appid", "10"))
+    if injected_client is None:
+        await client.aclose()
+    return result
 
 
-@_players.route("<player>/achievements", methods=["GET"])
-def get_player_achievements(player):
-    return check_response(
-        requests.get(
+@_players.route("/<player>/achievements", methods=["GET"])
+@read_cache(RedisCacheKeyPattern.USER_DATA, "achievements")
+async def get_player_achievements(player, **kwargs):
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient()
+
+    result = check_response(
+        await client.get(
             SteamWebAPI.build_url(
                 SteamWebAPI.STATS.name,
                 "GetPlayerAchievements",
@@ -86,6 +116,9 @@ def get_player_achievements(player):
             )
         )
     )
+    if injected_client is None:
+        await client.aclose()
+    return result
 
 
 api.register_blueprint(_players)

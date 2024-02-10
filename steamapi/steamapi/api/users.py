@@ -1,54 +1,50 @@
-from flask import Blueprint, request
-import requests
-from ..utils import SteamWebAPI, SteamworksAPI, check_response
-
-# from ..backend.userstats import backend
+from quart import Blueprint, request
+from httpx import AsyncClient
+from steamapi.api.types import SteamWebAPI, SteamworksAPI
+from steamapi.api.utils import check_response
+from steamapi.broker.types import RedisCacheKeyPattern
+from steamapi.broker.utils import read_cache
 
 api = Blueprint("users", __name__, url_prefix="/users")
 
 
-@api.route("/", methods=["GET"])
-def get_player_summaries():
-    return check_response(
-        requests.get(
-            SteamWebAPI.build_url(
-                SteamWebAPI.USER.value,
-                "GetPlayerSummaries",
-                "0002",
-                request.args.get("key"),
-                steamids=request.args.get("steamids"),
-            )
-        )
-    )
-
-
 @api.route("/<userid>/friends", methods=["GET"])
-def get_friend_list(userid):
-    return check_response(
-        requests.get(
+@read_cache(RedisCacheKeyPattern.USER_DATA, "friends")
+async def get_friend_list(userid, **kwargs):
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient()
+    result = check_response(
+        await client.get(
             SteamWebAPI.build_url(
                 SteamWebAPI.USER.value,
                 "GetFriendList",
-                "0002",
-                request.args.get("key"),
+                "0001",
+                request.args.get("key", kwargs.get("key")),
                 steamid=userid,
-                relationship=request.args.get("relationship", "all"),
+                relationship=request.args.get(
+                    "relationship", kwargs.get("relationship", "friends")
+                ),
             )
         )
     )
+    if injected_client is None:
+        await client.aclose()
+    return result
 
 
 # /--------------- OFFICIAL STEAMWORKS WEB API PROXY ENDPOINTS (KEY REQUIRED, USES JSON INPUT DTO) ---------------/
 
 
 @api.route("/<userid>/recent", methods=["GET"])
-def get_recently_played_games(userid):
+async def get_recently_played_games(userid, **kwargs):
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient()
     input = {
         "steamid": userid,
         "count": request.args.get("count"),
     }
-    return check_response(
-        requests.get(
+    result = check_response(
+        await client.get(
             SteamworksAPI.build_url(
                 SteamworksAPI.PLAYER.value,
                 "GetRecentlyPlayedGames",
@@ -58,51 +54,49 @@ def get_recently_played_games(userid):
             )
         )
     )
-
-
-@api.route("/<userid>/games/<game>/playtime", methods=["GET"])
-def get_single_game_playtime(userid, game):
-    input = {"steamid": userid, "appid": game}
-    return check_response(
-        requests.get(
-            SteamworksAPI.build_url(
-                SteamworksAPI.PLAYER.value,
-                "GetSingleGamePlaytime",
-                "0001",
-                request.args.get("key"),
-                input_json=input,
-            )
-        )
-    )
+    if injected_client is None:
+        await client.aclose()
+    return result
 
 
 @api.route("/<userid>/games", methods=["GET"])
-def get_owned_games(userid, **kwargs):
-
-    return check_response(
-        requests.get(
+@read_cache(RedisCacheKeyPattern.USER_DATA, "games")
+async def get_owned_games(userid, **kwargs):
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient()
+    result = check_response(
+        await client.get(
             SteamworksAPI.build_url(
                 SteamworksAPI.PLAYER.value,
                 "GetOwnedGames",
                 "0001",
                 request.args.get("key", kwargs.get("key")),
                 steamid=userid,
-                include_appinfo=request.args.get("include_appinfo")
-                or kwargs.get("include_appinfo"),
-                include_played_free_games=request.args.get("include_played_free_games")
-                or kwargs.get("include_played_free_games"),
-                appids_filter=request.args.get("appids_filter")
-                or kwargs.get("appids_filter"),
+                include_appinfo=request.args.get(
+                    "include_appinfo", kwargs.get("include_appinfo")
+                ),
+                include_played_free_games=request.args.get(
+                    "include_played_free_games", kwargs.get("include_played_free_games")
+                ),
+                appids_filter=request.args.get(
+                    "appids_filter", kwargs.get("appids_filter")
+                ),
             )
         )
     )
+    if injected_client is None:
+        await client.aclose()
+    return result
 
 
 @api.route("/<userid>/level", methods=["GET"])
-def get_steam_level(userid):
+@read_cache(RedisCacheKeyPattern.USER_DATA, "level")
+async def get_steam_level(userid, **kwargs):
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient()
     input = {"steamid": userid}
-    return check_response(
-        requests.get(
+    result = check_response(
+        await client.get(
             SteamworksAPI.build_url(
                 SteamworksAPI.PLAYER.value,
                 "GetSteamLevel",
@@ -112,6 +106,6 @@ def get_steam_level(userid):
             )
         )
     )
-
-
-# api.register_blueprint(backend)
+    if injected_client is None:
+        await client.aclose()
+    return result
