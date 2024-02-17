@@ -5,4 +5,6 @@ FROM redis/redis-stack-server:latest
 #     firewall-cmd -reload
 #RUN sed -i 's/protected-mode yes/protected-mode no/g' /opt/redis-stack/etc/redis.conf 
 
+RUN echo "CONFIG SET timeout 300" | redis-cli
+
 

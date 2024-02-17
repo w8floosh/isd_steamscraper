@@ -1,9 +1,19 @@
+from dataclasses import dataclass, field
 from enum import Enum
-from aiofiles import stderr
+from sys import stderr
+from typing import List, Literal
 from httpx import Limits
-from steamapi.api.utils import extract_query
 
 DEFAULT_API_CLIENT_LIMITS = Limits(max_connections=5)
+CleanMode = Literal["take", "pop"]
+
+
+@dataclass
+class SteamAPIResponse:
+    success: bool | Literal["with_warnings"]
+    data: List[dict] | dict
+    errors: List[str] | dict = field(default_factory=list)
+    cached: bool = False
 
 
 class SteamWebAPI(Enum):
@@ -13,32 +23,10 @@ class SteamWebAPI(Enum):
     USER = "ISteamUser"
     ECONOMY = "ISteamEconomy"
 
-    @classmethod
-    def build_url(
-        self, interface: "SteamWebAPI", call: str, version="0002", key="", **kwargs
-    ):
-        print(
-            f"http://api.steampowered.com/{interface}/{call}/v{version}{extract_query(key, **kwargs)}",
-            file=stderr,
-        )
-        return f"http://api.steampowered.com/{interface}/{call}/v{version}{extract_query(key, **kwargs)}"
 
-
-class SteamworksAPI(Enum):
+class SteamworksAPI(Enum):  # has payloads of type { response: {...} }
     PLAYER = "IPlayerService"
-    INVENTORY = "IInventoryService"
-    ECONOMY = "IEconService"
     STORE = "IStoreService"
-
-    @classmethod
-    def build_url(
-        self, interface: "SteamworksAPI", call: str, version="0002", key="", **kwargs
-    ):
-        # print(
-        #     f"http://api.steampowered.com/{interface}/{call}/v{version}{extract_query(key, **kwargs)}",
-        #     file=stderr,
-        # )
-        return f"http://api.steampowered.com/{interface}/{call}/v{version}{extract_query(key, **kwargs)}"
 
 
 class SteamStoreAPI(Enum):
@@ -46,6 +34,5 @@ class SteamStoreAPI(Enum):
     MARKET = "market"
     MISC = "about"
 
-    @classmethod
-    def build_url(self, interface: "SteamStoreAPI", call: str, *route, **kwargs):
-        return f"https://store.steampowered.com/{interface}/{call}{extract_query(None, *route, **kwargs)}"
+
+APIType = SteamWebAPI | SteamStoreAPI | SteamworksAPI

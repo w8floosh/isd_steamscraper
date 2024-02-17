@@ -1,6 +1,8 @@
-import json, asyncio
+import json
 from os import environ
-from steamapi.broker.utils import redis_init
+
+
+from ..broker.types import RedisManager
 
 _loginfile = open("login.json")
 
@@ -8,4 +10,4 @@ _loginfile = open("login.json")
 _login = json.loads(_loginfile.read())
 _loginfile.close()
 
-broker = asyncio.new_event_loop().run_until_complete(redis_init(_login))
+broker = RedisManager(_login)

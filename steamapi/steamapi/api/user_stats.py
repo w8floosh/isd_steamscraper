@@ -1,125 +1,195 @@
-import json, asyncio
-from math import ceil
-from aiofiles import stderr
+import asyncio
+from sys import stderr
 from quart import Blueprint, request
 from httpx import AsyncClient
 
-from steamapi.broker.redis import broker
-from steamapi.broker.types import RedisMessageTypes, RedisMessage
-from steamapi.broker.utils import get_redis_result
-from steamapi.api.types import DEFAULT_API_CLIENT_LIMITS
-from steamapi.api.stats import get_game_user_stats
-from steamapi.api.store import get_app_details
-from steamapi.api.users import get_owned_games
+from ..broker.types import (
+    RedisMessageType,
+    RedisMessage,
+    RedisCacheKeyPattern,
+    RedisCacheTTL,
+)
+from ..broker.utils import get_redis_result, cached, ping_broker
+from ..api.types import DEFAULT_API_CLIENT_LIMITS
+from ..api.stats import get_player_achievements
+from ..api.store import get_app_details
+from ..api.users import get_owned_games
+from ..api.utils import (
+    set_payload_from_requests,
+)
 
 
 api = Blueprint("playerstats", __name__, url_prefix="/compute/stats/players")
 
 
 @api.route("<userid>/gamerscore", methods=["GET"])
-async def get_achievement_score(userid):
+@cached(
+    RedisCacheKeyPattern.COMPUTED_DATA,
+    RedisMessageType.USER_ACHIEVEMENTS_SCORE.value,
+    ttl=RedisCacheTTL.LONGEST,
+)
+async def get_achievement_score(userid, **kwargs):
+    async def set_callback(message, requests):
+        for completed in asyncio.as_completed(requests):
+            result = await completed
+            message.payload.update(result["appid"], result)
+
     message = RedisMessage(
-        request.args.get("key"), RedisMessageTypes.USER_ACHIEVEMENTS_SCORE.value
+        request.args.get("key"), RedisMessageType.USER_ACHIEVEMENTS_SCORE.value
+    )
+
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient(limits=DEFAULT_API_CLIENT_LIMITS)
+    owned = await get_owned_games(
+        userid,
+        key=request.args.get("key"),
+        include_played_free_games=1,
+        session=client,
+    )
+    requests = [
+        get_player_achievements(
+            userid,
+            key=request.args.get("key"),
+            appid=game["appid"],
+            session=client,
+        )
+        for game in owned
+    ]
+
+    await set_payload_from_requests(
+        message, requests, DEFAULT_API_CLIENT_LIMITS.max_connections, set_callback
+    )
+
+    print("Sending message: ", message, file=stderr)
+    # publish message to Redis
+    result = await get_redis_result(
+        message,
+        f"computed{RedisMessageType.USER_ACHIEVEMENTS_SCORE.value}_{request.args.get('key')}",
+    )  # add channel to kwargs when implementing auth
+
+    if injected_client is None:
+        await client.aclose()
+    return result
+
+
+@api.route("<userid>/favorite", methods=["GET"])
+@cached(
+    RedisCacheKeyPattern.COMPUTED_DATA,
+    RedisMessageType.USER_FAVORITE_GENRES_CATEGORIES.value,
+    ttl=RedisCacheTTL.LONGEST,
+)
+async def get_user_favorite_genres_categories(userid):
+    message = RedisMessage(
+        request.args.get("key"), RedisMessageType.USER_FAVORITE_GENRES_CATEGORIES.value
     )
 
     async with AsyncClient(limits=DEFAULT_API_CLIENT_LIMITS) as session:
+
         owned = await get_owned_games(
             userid,
             key=request.args.get("key"),
             include_played_free_games=1,
             session=session,
         )
-        requests = [
-            get_game_user_stats(
-                userid,
-                key=request.args.get("key"),
-                appid=game["appid"],
-                session=session,
-            )
-            for game in owned["response"]["games"]
-        ]
 
-        batch_size = DEFAULT_API_CLIENT_LIMITS.max_connections
-        nreq = len(requests)
-        for batch in range(ceil(nreq / batch_size)):
-            batch_first = batch * batch_size
-            batch_last = min((batch + 1) * batch_size, nreq)
-            for completed in asyncio.as_completed(requests[batch_first:batch_last]):
+        requests = [get_app_details(game["appid"], session=session) for game in owned]
+
+        async def set_callback(message: RedisMessage, requests, owned):
+            for completed in asyncio.as_completed(requests):
                 result = await completed
-                message.payload_set(
+                message.payload.update(
                     result["appid"],
-                    result,
-                    "playerstats",
-                    "achievements",
+                    {
+                        "genres": result["data"]["details"]["genres"],
+                        "categories": result["data"]["details"]["categories"],
+                        "playtime": next(
+                            (
+                                game
+                                for game in owned
+                                if game["appid"] == result["appid"]
+                            ),
+                            None,
+                        ),
+                    },
                 )
 
-        print(message, file=stderr)
+        await set_payload_from_requests(
+            message,
+            requests,
+            DEFAULT_API_CLIENT_LIMITS.max_connections,
+            set_callback,
+            owned,
+        )
+
         # publish message to Redis
         return await get_redis_result(
-            broker,
             message,
-            request.args.get("key"),
+            f"computed{RedisMessageType.USER_FAVORITE_GENRES_CATEGORIES.value}_{request.args.get('key')}",
         )  # add channel to kwargs when implementing auth
 
 
-@api.route("<userid>/favorite", methods=["GET"])
-async def get_user_favorite_genres_categories(userid):
-    message = RedisMessage(RedisMessageTypes.USER_FAVORITE_GENRES_CATEGORIES.value)
-    owned = await get_owned_games(
-        userid, key=request.args.get("key"), include_played_free_games=1
+@api.route("<userid>/value", methods=["GET"])
+@cached(
+    RedisCacheKeyPattern.COMPUTED_DATA,
+    RedisMessageType.USER_LIBRARY_VALUE.value,
+    ttl=RedisCacheTTL.LONGEST,
+)
+async def get_user_library_value(userid):
+    message = RedisMessage(
+        request.args.get("key"), RedisMessageType.USER_LIBRARY_VALUE.value
     )
 
-    for game in owned["response"]["games"]:
-        details = await get_app_details(game.appid)
-        message.payload_set(
-            game.appid,
-            {
-                "genres": details.genres,
-                "categories": details.categories,
-                "playtime": game.playtime_forever,
-            },
+    async with AsyncClient(limits=DEFAULT_API_CLIENT_LIMITS) as session:
+        owned = await get_owned_games(
+            userid, key=request.args.get("key"), session=session
         )
 
-    # publish message to Redis
-    return await get_redis_result(
-        broker,
-        message,
-        request.args.get("key"),
-    )  # add channel to kwargs when implementing auth
+        requests = [
+            get_app_details(game["appid"], filters="price_overview", session=session)
+            for game in owned
+        ]
 
+        async def set_callback(message: RedisMessage, requests):
+            for completed in asyncio.as_completed(requests):
+                result = await completed
+                message.payload.update(
+                    result["appid"], result["price_overview"]["final"]
+                )
 
-@api.route("<userid>/value", methods=["GET"])
-async def get_user_library_value(userid):
-    message = RedisMessage(RedisMessageTypes.USER_LIBRARY_VALUE.value)
-    owned = await get_owned_games(userid, key=request.args.get("key"))
-
-    game_ids = ",".join([game.appid for game in json.loads(owned.data).response.games])
-    details = await get_app_details(game_ids, filters="price_overview")
-
-    for appid, price_overview in json.loads(details.data).items():
-        message.payload_set(appid, price_overview.final)
-
+        await set_payload_from_requests(
+            message,
+            requests,
+            DEFAULT_API_CLIENT_LIMITS.max_connections,
+            set_callback,
+        )
         # publish message to Redis
     return await get_redis_result(
-        broker,
         message,
-        request.args.get("key"),
+        f"computed{RedisMessageType.USER_LIBRARY_VALUE.value}_{request.args.get('key')}",
     )  # add channel to kwargs when implementing auth
 
 
 @api.route("<userid>/forgotten", methods=["GET"])
+@cached(
+    RedisCacheKeyPattern.COMPUTED_DATA,
+    RedisMessageType.USER_FORGOTTEN_GAMES.value,
+    ttl=RedisCacheTTL.LONGEST,
+)
 async def get_user_forgotten_games(userid):
-    message = RedisMessage(RedisMessageTypes.USER_FORGOTTEN_GAMES.value)
-    owned = await get_owned_games(
-        userid, key=request.args.get("key"), include_appinfo=1
+    message = RedisMessage(
+        request.args.get("key"), RedisMessageType.USER_FORGOTTEN_GAMES.value
     )
 
-    for game in json.loads(owned.data).response.games:
-        message.payload_set(game.appid, game)
+    async with AsyncClient(limits=DEFAULT_API_CLIENT_LIMITS) as session:
+        owned = await get_owned_games(
+            userid, key=request.args.get("key"), include_appinfo=1, session=session
+        )
+
+        for game in owned:
+            message.payload.update(game["appid"], game)
 
         # publish message to Redis
     return await get_redis_result(
-        broker,
         message,
-        request.args.get("key"),
+        f"computed{RedisMessageType.USER_FORGOTTEN_GAMES.value}_{request.args.get('key')}",
     )  # add channel to kwargs when implementing auth
