@@ -29,3 +29,7 @@ __pycache__
 *.sw?
 
 *.tsbuildinfo
+**/launch.json
+**/structures.json
+# steamapi/steamapi/.vscode/launch.json
+# steamapi/steamapi/structures.json

@@ -3,13 +3,13 @@ services:
   #   build: ./client
   #   restart: always
   #   ports: 
-  #     - "443:443"
+  #     - "4000:80"
   #   container_name: client
   #   depends_on:
   #     - api
   
   # api:
-  #   build: ./ai
+  #   build: ./api
   #   restart: always
   #   ports: 
   #     - "3001:3001"
@@ -25,7 +25,8 @@ services:
   #   restart: always
   #   container_name: nginx
   #   environment:
-  #     - ENV=prod
+  #     - ENV=dev
+  #     - CORS_ENABLED=true
   #   ports: 
   #     - "80:80"
   #   volumes:
@@ -33,25 +34,25 @@ services:
   #   command: ['nginx-debug', '-g', 'daemon off;']
     
   broker:
-    image: redis:latest
+    build: ./redis
     restart: always
-    container_name: broker
+    container_name: redis
     ports:
       - "6379:6379"
-    depends_on:
-      - api
-      - db
+    # depends_on:
+    #   - api
+    #   - db
 
-  # db:
-  #   image: mariadb:latest
-  #   restart: always
-  #   container_name: mariadb
-  #   ports:
-  #     - "3306:3306"
-  #   environment:
-  #     MARIADB_ROOT_PASSWORD: admin
-  #   volumes:
-  #     - "dbdata:/var/lib/mysql"
+#   db:
+#     image: mariadb:latest
+#     restart: always
+#     container_name: mariadb
+#     ports:
+#       - "3306:3306"
+#     environment:
+#       MARIADB_ROOT_PASSWORD: admin
+#     volumes:
+#       - "dbdata:/var/lib/mysql"
  
 # volumes:
 #   dbdata: {}

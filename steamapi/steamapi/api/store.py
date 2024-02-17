@@ -1,37 +1,59 @@
-from flask import Blueprint, request
-import requests
-from ..utils import SteamStoreAPI, SteamworksAPI, check_response, header_configuration
-from sys import stderr
+import dataclasses
+from quart import Blueprint, request
+from httpx import AsyncClient, Timeout
+from ..api.types import SteamStoreAPI, SteamworksAPI
+from ..api.utils import build_url, clean_obj, prepare_response
+from ..broker.types import RedisCacheKeyPattern, RedisCacheTTL
+from ..broker.utils import cached
 
 api = Blueprint("store", __name__, url_prefix="/store")
 
 
-@api.route("/")
-def get_app_list():
-    return check_response(
-        requests.get(
-            SteamworksAPI.build_url(
-                SteamworksAPI.STORE.value,
+@api.route("/", methods=["GET"])
+@cached(RedisCacheKeyPattern.APP_LIST, ttl=RedisCacheTTL.FOREVER)
+async def get_app_list(**kwargs):
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient(timeout=Timeout(timeout=60))
+
+    result = prepare_response(
+        await client.get(
+            build_url(
+                SteamworksAPI.STORE,
                 "GetAppList",
                 "1",
                 request.args.get("key"),
-                max_results=request.args.get("max_results", 50000),
-                last_appid=request.args.get("last_appid", 10),
+                max_results=request.args.get("max_results", 10000),
+                last_appid=request.args.get("last_appid"),
             )
         )
     )
+    apps = result.data["response"]["apps"]
+
+    for app in apps:
+        id = app.pop("appid")
+        result.data.update({id: clean_obj(app, entries=["name", "last_modified"])})
+
+    result.data.pop("response")
+
+    if injected_client is None:
+        await client.aclose()
+    return dataclasses.asdict(result)
 
 
-@api.route("/<id>/details")
-def get_app_details(id, **kwargs):
-    """cannot execute for multiple apps, inconsistent behavior"""
-    return check_response(
-        requests.get(
-            SteamStoreAPI.build_url(
-                SteamStoreAPI.GENERIC.value,
+@api.route("details", methods=["GET"])
+@cached(RedisCacheKeyPattern.APP_DATA)
+async def get_app_details(**kwargs):
+    """Can be executed for multiple apps only for price retrieval"""
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient()
+    filters = request.args.get("filters", kwargs.get("filters"))
+    result = prepare_response(
+        await client.get(
+            build_url(
+                SteamStoreAPI.GENERIC,
                 "appdetails",
-                appids=id,
-                filters=request.args.get("filters", kwargs.get("filters")),
+                appids=request.args.get("appids", kwargs.get("appids")),
+                filters=filters,
                 cc=request.args.get("cc", kwargs.get("cc", "US")),
                 language=request.args.get(
                     "language", kwargs.get("language", "english")
@@ -40,47 +62,28 @@ def get_app_details(id, **kwargs):
         )
     )
 
-
-@api.route("/<query>")
-def store_search(query):
-    return check_response(
-        requests.get(
-            SteamStoreAPI.build_url(
-                SteamStoreAPI.GENERIC.value,
-                "storesearch",
-                term=query,
-                cc=request.args.get("cc", "US"),
-                l=request.args.get("l", "english"),
+    for appid, details in result.data.items():
+        if not details["success"]:
+            result.errors.update({appid: "App not found"})
+            result.data.update({appid: {}})
+        elif not details["data"] and filters.find("price_overview"):
+            result.errors.update({appid: "App is currently free"})
+            result.data.update({appid: {}})
+        else:
+            result.data.update(
+                {
+                    appid: clean_obj(
+                        details,
+                        entries=["name", "price_overview", "categories", "genres"],
+                    )
+                }
             )
-        )
-    )
 
+        if len(result.errors) == len(result.data):
+            result.success = False
+        elif len(result.errors):
+            result.success = "with_warnings"
 
-@api.route("/genre/<query>")
-def get_apps_in_genre(query):
-    return check_response(
-        requests.get(
-            SteamStoreAPI.build_url(
-                SteamStoreAPI.GENERIC,
-                "getappsingenre",
-                genre=query,
-                cc=request.args.get("cc", "US"),
-                l=request.args.get("l", "english"),
-            )
-        )
-    )
-
-
-@api.route("/category/<query>")
-def get_apps_in_category(query):
-    return check_response(
-        requests.get(
-            SteamStoreAPI.build_url(
-                SteamStoreAPI.GENERIC,
-                "getappsincategory",
-                category=query,
-                cc=request.args.get("cc", "US"),
-                l=request.args.get("l", "english"),
-            )
-        )
-    )
+    if injected_client is None:
+        await client.aclose()
+    return dataclasses.asdict(result)
