@@ -1,4 +1,5 @@
 import asyncio
+import dataclasses
 from sys import stderr
 from quart import Blueprint, request
 from httpx import AsyncClient
@@ -29,7 +30,7 @@ api = Blueprint("playerstats", __name__, url_prefix="/compute/stats/players")
     ttl=RedisCacheTTL.LONGEST,
 )
 async def get_achievement_score(userid, **kwargs):
-    async def set_callback(message, requests):
+    async def set_callback(message: RedisMessage, requests):
         for completed in asyncio.as_completed(requests):
             result = await completed
             message.payload.update(result["appid"], result)
@@ -69,7 +70,7 @@ async def get_achievement_score(userid, **kwargs):
 
     if injected_client is None:
         await client.aclose()
-    return result
+    return dataclasses.asdict(result)
 
 
 @api.route("<userid>/favorite", methods=["GET"])
@@ -122,9 +123,11 @@ async def get_user_favorite_genres_categories(userid):
         )
 
         # publish message to Redis
-        return await get_redis_result(
-            message,
-            f"computed{RedisMessageType.USER_FAVORITE_GENRES_CATEGORIES.value}_{request.args.get('key')}",
+        return dataclasses.asdict(
+            await get_redis_result(
+                message,
+                f"computed{RedisMessageType.USER_FAVORITE_GENRES_CATEGORIES.value}_{request.args.get('key')}",
+            )
         )  # add channel to kwargs when implementing auth
 
 
@@ -163,9 +166,11 @@ async def get_user_library_value(userid):
             set_callback,
         )
         # publish message to Redis
-    return await get_redis_result(
-        message,
-        f"computed{RedisMessageType.USER_LIBRARY_VALUE.value}_{request.args.get('key')}",
+    return dataclasses.asdict(
+        await get_redis_result(
+            message,
+            f"computed{RedisMessageType.USER_LIBRARY_VALUE.value}_{request.args.get('key')}",
+        )
     )  # add channel to kwargs when implementing auth
 
 
@@ -189,7 +194,9 @@ async def get_user_forgotten_games(userid):
             message.payload.update(game["appid"], game)
 
         # publish message to Redis
-    return await get_redis_result(
-        message,
-        f"computed{RedisMessageType.USER_FORGOTTEN_GAMES.value}_{request.args.get('key')}",
+    return dataclasses.asdict(
+        await get_redis_result(
+            message,
+            f"computed{RedisMessageType.USER_FORGOTTEN_GAMES.value}_{request.args.get('key')}",
+        )
     )  # add channel to kwargs when implementing auth

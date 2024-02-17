@@ -1,4 +1,5 @@
 import asyncio
+import dataclasses
 
 from quart import Blueprint, request
 from httpx import AsyncClient
@@ -47,9 +48,11 @@ async def get_friends_achievement_score_leaderboard(userid):
         )
 
     # publish message to Redis
-    return await get_redis_result(
-        message,
-        f"computed{RedisMessageType.LEADERBOARD_ACHIEVEMENTS_SCORE.value}_{request.args.get('token')}",
+    return dataclasses.asdict(
+        await get_redis_result(
+            message,
+            f"computed{RedisMessageType.LEADERBOARD_ACHIEVEMENTS_SCORE.value}_{request.args.get('token')}",
+        )
     )  # add channel to kwargs when implementing auth
 
 
@@ -88,9 +91,11 @@ async def get_friends_playtime_leaderboard(userid):
             set_callback,
         )
     # publish message to Redis
-    return await get_redis_result(
-        message,
-        f"computed{RedisMessageType.LEADERBOARD_PLAYTIME.value}_{request.args.get('key')}",
+    return dataclasses.asdict(
+        await get_redis_result(
+            message,
+            f"computed{RedisMessageType.LEADERBOARD_PLAYTIME.value}_{request.args.get('key')}",
+        )
     )  # add channel to kwargs when implementing auth
 
 
@@ -124,9 +129,11 @@ async def get_friends_library_value_leaderboard(userid):
         )
 
     # publish message to Redis
-    return await get_redis_result(
-        message,
-        f"computed{RedisMessageType.LEADERBOARD_LIBRARY_VALUE.value}_{request.args.get('key')}",
+    return dataclasses.asdict(
+        await get_redis_result(
+            message,
+            f"computed{RedisMessageType.LEADERBOARD_LIBRARY_VALUE.value}_{request.args.get('key')}",
+        )
     )  # add channel to kwargs when implementing auth
 
 
@@ -162,7 +169,9 @@ async def get_friends_versatility_score_leaderboard(userid):
             set_callback,
         )
     # publish message to Redis
-    return await get_redis_result(
-        message,
-        f"computed{RedisMessageType.LEADERBOARD_VERSATILITY_SCORE.value}_{request.args.get('key')}",
+    return dataclasses.asdict(
+        await get_redis_result(
+            message,
+            f"computed{RedisMessageType.LEADERBOARD_VERSATILITY_SCORE.value}_{request.args.get('key')}",
+        )
     )  # add channel to kwargs when implementing auth
