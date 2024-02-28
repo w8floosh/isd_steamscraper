@@ -3,18 +3,16 @@ from quart import Blueprint, request
 from httpx import AsyncClient
 from ..api.types import SteamWebAPI
 from ..api.utils import build_url, clean_obj, prepare_response
-from ..broker.types import RedisCacheKeyPattern, RedisCacheTTL
-from ..broker.utils import cached
 
 news = Blueprint("news", __name__, url_prefix="/news")
 
 
 @news.route("/<id>", methods=["GET"])
-@cached(
-    RedisCacheKeyPattern.APP_DATA,
-    "news",
-    ttl=RedisCacheTTL.LONGEST,
-)
+# @cached(
+#     RedisCacheKeyPattern.APP_DATA,
+#     "news",
+#     ttl=RedisCacheTTL.LONGEST,
+# )
 async def get_app_news(id, **kwargs):
     injected_client = kwargs.get("session")
     client = injected_client or AsyncClient()

@@ -3,14 +3,12 @@ from quart import Blueprint, request
 from httpx import AsyncClient, Timeout
 from ..api.types import SteamStoreAPI, SteamworksAPI
 from ..api.utils import build_url, clean_obj, prepare_response
-from ..broker.types import RedisCacheKeyPattern, RedisCacheTTL
-from ..broker.utils import cached
 
 api = Blueprint("store", __name__, url_prefix="/store")
 
 
 @api.route("/", methods=["GET"])
-@cached(RedisCacheKeyPattern.APP_LIST, ttl=RedisCacheTTL.FOREVER)
+# @cached(RedisCacheKeyPattern.APP_LIST, ttl=RedisCacheTTL.FOREVER)
 async def get_app_list(**kwargs):
     injected_client = kwargs.get("session")
     client = injected_client or AsyncClient(timeout=Timeout(timeout=60))
@@ -41,8 +39,7 @@ async def get_app_list(**kwargs):
 
 
 @api.route("details", methods=["GET"])
-@cached(RedisCacheKeyPattern.APP_DATA)
-async def get_app_details(**kwargs):
+async def get_app_details(appid, **kwargs):
     """Can be executed for multiple apps only for price retrieval"""
     injected_client = kwargs.get("session")
     client = injected_client or AsyncClient()
@@ -52,7 +49,8 @@ async def get_app_details(**kwargs):
             build_url(
                 SteamStoreAPI.GENERIC,
                 "appdetails",
-                appids=request.args.get("appids", kwargs.get("appids")),
+                # appids=request.args.get("appids", kwargs.get("appids")),
+                appids=appid,
                 filters=filters,
                 cc=request.args.get("cc", kwargs.get("cc", "US")),
                 language=request.args.get(
@@ -61,19 +59,18 @@ async def get_app_details(**kwargs):
             ),
         )
     )
-
-    for appid, details in result.data.items():
+    for appid, details in result.data.copy().items():
         if not details["success"]:
-            result.errors.update({appid: "App not found"})
+            result.errors.append(f"App {appid} not found")
             result.data.update({appid: {}})
         elif not details["data"] and filters.find("price_overview"):
-            result.errors.update({appid: "App is currently free"})
+            result.errors.append(f"App {appid} is currently free")
             result.data.update({appid: {}})
         else:
             result.data.update(
                 {
                     appid: clean_obj(
-                        details,
+                        details["data"],
                         entries=["name", "price_overview", "categories", "genres"],
                     )
                 }
