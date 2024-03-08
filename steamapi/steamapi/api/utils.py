@@ -3,7 +3,7 @@ from sys import stderr
 from typing import Coroutine
 from httpx import Response
 
-from api.types import (
+from .types import (
     APIType,
     CleanMode,
     SteamAPIResponse,
@@ -55,9 +55,12 @@ def clean_obj(obj: dict, clean_mode: CleanMode = "take", entries: list = []):
 
 
 async def set_payload_from_requests(
-    message: RedisMessage, requests, batch_size, do: Coroutine, *args
+    message: RedisMessage, requests, do: Coroutine, batch_size=None, *args
 ):
     nreq = len(requests)
+    if not batch_size:
+        return await do(message, requests, *args)
+
     for batch in range(ceil(nreq / batch_size)):
         batch_start = batch * batch_size
         batch_end = min((batch + 1) * batch_size, nreq)

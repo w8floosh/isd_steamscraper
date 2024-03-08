@@ -4,14 +4,12 @@ from quart import Blueprint, request
 from httpx import AsyncClient
 from ..api.types import SteamWebAPI, SteamworksAPI
 from ..api.utils import build_url, clean_obj, prepare_response
-from ..broker.types import RedisCacheKeyPattern
-from ..broker.utils import cached
 
 api = Blueprint("users", __name__, url_prefix="/users")
 
 
 @api.route("/<userid>/friends", methods=["GET"])
-@cached(RedisCacheKeyPattern.USER_DATA, "friends")
+# @cached(RedisCacheKeyPattern.USER_DATA, "friends")
 async def get_friend_list(userid, **kwargs):
     injected_client = kwargs.get("session")
     client = injected_client or AsyncClient()
@@ -23,9 +21,6 @@ async def get_friend_list(userid, **kwargs):
                 "0001",
                 request.args.get("key", kwargs.get("key")),
                 steamid=userid,
-                relationship=request.args.get(
-                    "relationship", kwargs.get("relationship", "friends")
-                ),
             )
         )
     )
@@ -77,8 +72,10 @@ async def get_recently_played_games(userid, **kwargs):
 
 
 @api.route("/<userid>/games", methods=["GET"])
-@cached(RedisCacheKeyPattern.USER_DATA, "games")
+# @cached(RedisCacheKeyPattern.USER_DATA, "games")
 async def get_owned_games(userid, **kwargs):
+    from ..app import logger
+
     injected_client = kwargs.get("session")
     client = injected_client or AsyncClient()
     result = prepare_response(
@@ -101,16 +98,26 @@ async def get_owned_games(userid, **kwargs):
             )
         )
     )
+    logger.info(userid)
+    try:
+        games = result.data["response"]["games"]
+        games = [
+            clean_obj(game, clean_mode="pop", entries=["img_icon_url"])
+            for game in games
+        ]
+        result.data.update({"steamid": userid, "games": {}})
 
-    games = result.data["response"]["games"]
-    games = [
-        clean_obj(game, clean_mode="pop", entries=["img_icon_url"]) for game in games
-    ]
-    for game in games:
-        id = game.pop("appid")
-        result.data.update({id: game})
+        for game in games:
+            id = game.pop("appid")
+            result.data["games"].update({id: game})
 
-    result.data.pop("response")
+        result.data.pop("response")
+    except:
+        result.success = False
+        result.data = {}
+        result.errors.append(
+            f"Could not retrieve data for steamid {userid}. User may not exist or have a private profile."
+        )
     if injected_client is None:
         await client.aclose()
     return dataclasses.asdict(result)

@@ -12,7 +12,7 @@ CleanMode = Literal["take", "pop"]
 class SteamAPIResponse:
     success: bool | Literal["with_warnings"]
     data: List[dict] | dict
-    errors: List[str] | dict = field(default_factory=list)
+    errors: List[str] = field(default_factory=list)
     cached: bool = False
 
 

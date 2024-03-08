@@ -3,8 +3,6 @@ from quart import Blueprint, request
 from httpx import AsyncClient
 from ..api.types import SteamWebAPI
 from ..api.utils import build_url, prepare_response
-from ..broker.types import RedisCacheKeyPattern
-from ..broker.utils import cached
 
 api = Blueprint("stats", __name__, url_prefix="/stats")
 _players = Blueprint("players", __name__, url_prefix="/players")
@@ -61,7 +59,7 @@ async def get_no_current_players(id, **kwargs):
 
 
 @_players.route("/<player>/achievements", methods=["GET"])
-@cached(RedisCacheKeyPattern.USER_DATA, "achievements")
+# @cached(RedisCacheKeyPattern.USER_DATA, "achievements")
 async def get_player_achievements(player, **kwargs):
     injected_client = kwargs.get("session")
     client = injected_client or AsyncClient()
@@ -80,9 +78,14 @@ async def get_player_achievements(player, **kwargs):
         )
     )
 
-    achievements = result.data["playerstats"]["achievements"]
-    result.data.update({id: achievements})
-    result.data.pop("playerstats")
+    if result.success:
+        achievements = result.data["playerstats"].get("achievements")
+        if not achievements:
+            achievements = {}
+            result.success = "with_warnings"
+            result.errors.append("No achievements unlocked")
+        result.data.update({id: achievements})
+        result.data.pop("playerstats")
 
     if injected_client is None:
         await client.aclose()
