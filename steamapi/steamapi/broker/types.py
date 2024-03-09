@@ -100,7 +100,7 @@ class RedisManager:
             self.connection.close()
             self.connection = None
 
-    def ping(self):
+    def ping(self, skip_on_failure=False):
         def decorator(func):
             @wraps(func)
             async def wrapper(*args, **kwargs):
@@ -118,6 +118,8 @@ class RedisManager:
                         logger.error(
                             "Redis service is unreachable. Please try again in 30 seconds."
                         )
+                        if skip_on_failure:
+                            break
                         return dataclasses.asdict(
                             SteamAPIResponse(
                                 False,

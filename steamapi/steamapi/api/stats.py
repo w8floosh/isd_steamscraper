@@ -1,6 +1,9 @@
 import dataclasses
 from quart import Blueprint, request
 from httpx import AsyncClient
+
+from ..broker.types import RedisCacheKeyPattern
+from ..broker.cache import cached
 from ..api.types import SteamWebAPI
 from ..api.utils import build_url, prepare_response
 
@@ -59,7 +62,7 @@ async def get_no_current_players(id, **kwargs):
 
 
 @_players.route("/<player>/achievements", methods=["GET"])
-# @cached(RedisCacheKeyPattern.USER_DATA, "achievements")
+@cached(RedisCacheKeyPattern.USER_DATA, ["player"], ["achievements"])
 async def get_player_achievements(player, **kwargs):
     injected_client = kwargs.get("session")
     client = injected_client or AsyncClient()

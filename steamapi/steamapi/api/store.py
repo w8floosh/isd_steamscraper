@@ -1,6 +1,9 @@
 import dataclasses
 from quart import Blueprint, request
 from httpx import AsyncClient, Timeout
+
+from ..broker.types import RedisCacheTTL, RedisCacheKeyPattern
+from ..broker.cache import cached
 from ..api.types import SteamStoreAPI, SteamworksAPI
 from ..api.utils import build_url, clean_obj, prepare_response
 
@@ -39,6 +42,7 @@ async def get_app_list(**kwargs):
 
 
 @api.route("details", methods=["GET"])
+@cached(RedisCacheKeyPattern.APP_DATA, ["appid"], ["details"])
 async def get_app_details(appid, **kwargs):
     """Can be executed for multiple apps only for price retrieval"""
     injected_client = kwargs.get("session")
