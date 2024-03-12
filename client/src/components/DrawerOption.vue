@@ -1,6 +1,6 @@
 <template>
   <q-item clickable tag="a" :to="endpoint">
-    <q-item-section v-if="icon" avatar>
+    <q-item-section avatar>
       <q-icon :name="icon" />
     </q-item-section>
 
@@ -12,13 +12,13 @@
 </template>
 
 <script setup lang="ts">
-export interface EssentialLinkProps {
+export interface DrawerOptionProps {
   title: string;
+  icon: string;
   caption?: string;
   endpoint?: string;
-  icon?: string;
 }
-withDefaults(defineProps<EssentialLinkProps>(), {
+withDefaults(defineProps<DrawerOptionProps>(), {
   caption: '',
   endpoint: '#',
   icon: '',

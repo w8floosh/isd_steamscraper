@@ -1,8 +1,10 @@
-export interface Todo {
+export interface IAppMetadata {
   id: number;
-  content: string;
+  name: string;
+  lastUpdate: Date;
 }
 
-export interface Meta {
-  totalCount: number;
+export interface IBreadcrumbs {
+  name: string;
+  icon: string;
 }

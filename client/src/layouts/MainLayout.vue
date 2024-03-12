@@ -12,8 +12,8 @@
         />
 
         <q-toolbar-title> SteamScraper </q-toolbar-title>
-
-        <div>
+        
+        
           <q-chip
             v-if="authenticated"
             style="background-color: transparent"
@@ -25,8 +25,11 @@
             {{ user.name }}
           </q-chip>
           <q-btn v-else label="login" @click="switchLoginDialog" />
-          {{ authenticated }}
-        </div>
+      </q-toolbar>
+      <q-toolbar inset>
+        <q-breadcrumbs>
+          <q-breadcrumbs-el v-for="page in breadcrumbs" :key="page.name" :label="page.name" :icon="page.icon" separator/>
+        </q-breadcrumbs>
       </q-toolbar>
     </q-header>
 
@@ -34,12 +37,12 @@
       <q-list>
         <q-item-label header> Navigation menu </q-item-label>
 
-        <EssentialLink v-for="link in links" :key="link.title" v-bind="link" />
+        <DrawerOption v-for="link in links" :key="link.title" v-bind="link" />
       </q-list>
     </q-drawer>
 
     <q-page-container>
-      <router-view />
+      <router-view/>
       <LoginDialog
         v-if="loginDialogOpened"
         v-model="loginDialogOpened"
@@ -53,12 +56,19 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useAuthStore } from 'stores/auth';
-import EssentialLink, {
-  EssentialLinkProps,
-} from 'components/EssentialLink.vue';
+import DrawerOption, {
+  DrawerOptionProps,
+} from 'components/DrawerOption.vue';
 import LoginDialog from 'components/dialogs/LoginDialog.vue';
 import { UserCredentials } from 'src/composables/types';
 import { storeToRefs } from 'pinia';
+import { IBreadcrumbs } from 'src/components/models';
+import { RouteLocation, onBeforeRouteLeave } from 'vue-router';
+
+onBeforeRouteLeave((to) => {
+  addBreadcrumbs(to)
+  console.log(breadcrumbs.value)
+})
 
 const { signin } = useAuthStore();
 const { user, authenticated, loading } = storeToRefs(useAuthStore());
@@ -70,6 +80,7 @@ const props = withDefaults(defineProps<{ auth?: string }>(), {
 const loginDialogOpened = ref(props.auth == 'true');
 
 const avatarText = ref('');
+const breadcrumbs = ref<IBreadcrumbs[]>([{name: 'Home', icon: 'home'}])
 
 const signIn = async (credentials: UserCredentials) => {
   if (!loading.value) {
@@ -78,10 +89,31 @@ const signIn = async (credentials: UserCredentials) => {
   }
 };
 
+/* add breadcrumbs data (name and icon) to the breadcrumbs array,
+if the route is a page listed in drawerOptions, delete all breadcrumbs and add the one relative to the page
+else add the page to the breadcrumbs array
+also, if the route is already in the breadcrumbs array, remove all the elements after it  
+*/
+function addBreadcrumbs(to: RouteLocation) {
+  if (to.name) {
+    const page = links.value.find((link) => link.endpoint === to.path);
+    if (page) {
+      breadcrumbs.value = [{name: page.title, icon: page.icon}]
+    } else {
+      const index = breadcrumbs.value.findIndex((el) => el.name === to.name);
+      if (index !== -1) {
+        breadcrumbs.value = breadcrumbs.value.slice(0, index + 1);
+      } else {
+        breadcrumbs.value.push({name: to.name.toString(), icon: to.meta.icon as string})
+      }
+    }
+  }
+}
+
 const switchLoginDialog = () =>
   (loginDialogOpened.value = !loginDialogOpened.value);
 
-const publicEssentialLinks: EssentialLinkProps[] = [
+const publicDrawerOptions: DrawerOptionProps[] = [
   {
     title: 'Homepage',
     icon: 'home',
@@ -89,29 +121,29 @@ const publicEssentialLinks: EssentialLinkProps[] = [
   },
 ];
 
-const restrictedEssentialLinks: EssentialLinkProps[] = [
+const restrictedDrawerOptions: DrawerOptionProps[] = [
   {
     title: 'Stats',
     caption: 'See your personal stats',
-    icon: 'person',
+    icon: 'query_stats',
     endpoint: '/me',
   },
   {
     title: 'App data',
-    caption: 'Get all details and news about a game',
-    icon: 'games',
+    caption: 'Get all details and news about a game/app',
+    icon: 'sports_esports',
     endpoint: '/apps',
   },
   {
     title: 'Friends',
     caption: 'Show your friend list',
-    icon: 'chat',
+    icon: 'group',
     endpoint: '/friends',
   },
   {
     title: 'Leaderboards',
     caption: 'Who is the best among you and your friends?',
-    icon: 'public',
+    icon: 'leaderboard',
     endpoint: '/leaderboards',
   },
 ];
@@ -119,8 +151,8 @@ const leftDrawerOpen = ref(false);
 
 const links = computed(() =>
   authenticated.value
-    ? publicEssentialLinks.concat(...restrictedEssentialLinks)
-    : publicEssentialLinks
+    ? publicDrawerOptions.concat(...restrictedDrawerOptions)
+    : publicDrawerOptions
 );
 
 function toggleLeftDrawer() {
