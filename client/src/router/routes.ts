@@ -4,7 +4,7 @@ import StatsPage from 'pages/StatsPage.vue';
 import UserPage from 'pages/UserPage.vue';
 import LeaderboardsPage from 'pages/LeaderboardsPage.vue';
 import IndexPage from 'pages/IndexPage.vue';
-import AppPage from 'pages/AppPage.vue';
+import AppsPage from 'pages/AppsPage.vue';
 import ErrorNotFound from 'pages/ErrorNotFound.vue';
 import FriendsPage from 'src/pages/FriendsPage.vue';
 
@@ -41,7 +41,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/apps',
     component: MainLayout,
-    children: [{ path: '', component: AppPage, name: 'App data' }],
+    children: [{ path: '', component: AppsPage, name: 'App data' }],
     meta: {
       requiresAuth: true,
       icon: 'sports_esports',

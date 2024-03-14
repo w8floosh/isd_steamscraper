@@ -1,6 +1,7 @@
 import { api as axios } from 'src/boot/axios';
 import { ISteamAPIResponse } from './types';
 import { useAuthStore } from 'src/stores/auth';
+import { IAppMetadata } from 'src/components/models';
 
 export default new (class AppsClient {
   private base_url = process.env.STEAMAPI_PROXY_URL || '';
@@ -9,9 +10,9 @@ export default new (class AppsClient {
   private endpoint_news = '/news';
 
   async getAppList(
-    max_results: number,
+    max_results?: number,
     last_appid?: string
-  ): Promise<ISteamAPIResponse> {
+  ): Promise<ISteamAPIResponse<IAppMetadata>> {
     const url = this.base_url + this.endpoint_store;
     const params = {
       max_results,
@@ -20,7 +21,7 @@ export default new (class AppsClient {
     };
 
     try {
-      const response = await axios.get(url, {
+      const response = await axios.get<ISteamAPIResponse<IAppMetadata>>(url, {
         params,
       });
       return response.data;
@@ -32,7 +33,7 @@ export default new (class AppsClient {
 
   async getNews(
     id: string,
-    count: number,
+    count?: number,
     maxlength?: number
   ): Promise<ISteamAPIResponse> {
     const url = this.base_url + this.endpoint_news;
@@ -44,7 +45,7 @@ export default new (class AppsClient {
     };
 
     try {
-      const response = await axios.get(url, {
+      const response = await axios.get<ISteamAPIResponse>(url, {
         params,
       });
       return response.data;
@@ -70,7 +71,7 @@ export default new (class AppsClient {
     };
 
     try {
-      const response = await axios.get(url, {
+      const response = await axios.get<ISteamAPIResponse>(url, {
         params,
       });
       return response.data;
@@ -89,7 +90,7 @@ export default new (class AppsClient {
     };
 
     try {
-      const response = await axios.get(url, {
+      const response = await axios.get<ISteamAPIResponse>(url, {
         params,
       });
       return response.data;
@@ -106,7 +107,7 @@ export default new (class AppsClient {
     };
 
     try {
-      const response = await axios.get(url, {
+      const response = await axios.get<ISteamAPIResponse>(url, {
         params,
       });
       return response.data;

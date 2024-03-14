@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { useAuthClient } from '../composables/useAuthClient';
+import { useAuthService } from '../composables/useAuthService';
 import { UserCredentials } from '../composables/types';
 import { computed, ref } from 'vue';
 
@@ -9,7 +9,7 @@ const NOT_LOGGED = {
   token: '',
   nonce: '',
 };
-const { login } = useAuthClient();
+const { login } = useAuthService();
 
 export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false);

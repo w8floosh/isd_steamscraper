@@ -56,18 +56,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useAuthStore } from 'stores/auth';
-import DrawerOption, {
-  DrawerOptionProps,
-} from 'components/DrawerOption.vue';
+import DrawerOption from 'components/items/DrawerOption.vue';
 import LoginDialog from 'components/dialogs/LoginDialog.vue';
 import { UserCredentials } from 'src/composables/types';
 import { storeToRefs } from 'pinia';
-import { IBreadcrumbs } from 'src/components/models';
+import { IBreadcrumbs, IDrawerOption } from 'src/components/models';
 import { RouteLocation, onBeforeRouteLeave } from 'vue-router';
 
 onBeforeRouteLeave((to) => {
   addBreadcrumbs(to)
-  console.log(breadcrumbs.value)
 })
 
 const { signin } = useAuthStore();
@@ -113,7 +110,7 @@ function addBreadcrumbs(to: RouteLocation) {
 const switchLoginDialog = () =>
   (loginDialogOpened.value = !loginDialogOpened.value);
 
-const publicDrawerOptions: DrawerOptionProps[] = [
+const publicDrawerOptions: IDrawerOption[] = [
   {
     title: 'Homepage',
     icon: 'home',
@@ -121,7 +118,7 @@ const publicDrawerOptions: DrawerOptionProps[] = [
   },
 ];
 
-const restrictedDrawerOptions: DrawerOptionProps[] = [
+const restrictedDrawerOptions: IDrawerOption[] = [
   {
     title: 'Stats',
     caption: 'See your personal stats',

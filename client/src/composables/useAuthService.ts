@@ -1,8 +1,8 @@
 import { api as axios } from 'src/boot/axios';
 import { UserCredentials } from './types';
 
-const auth_url = process.env.AUTH_ENDPOINT;
-export const useAuthClient = () => {
+export const useAuthService = () => {
+  const auth_url = process.env.AUTH_ENDPOINT;
   const login = async (credentials: UserCredentials) => {
     // return await axios.post(auth_url, { credentials });
     return {

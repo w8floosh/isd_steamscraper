@@ -7,9 +7,9 @@ export default new (class LeaderboardsClient {
     process.env.STEAMAPI_PROXY_URL + '/compute/stats/leaderboards/friends';
 
   async getAchievementScoreFriendsLeaderboard(
-    friendId: number
+    userId: number
   ): Promise<ISteamAPIResponse> {
-    const url = `${this.base_url}/${friendId}/gamerscore`;
+    const url = `${this.base_url}/${userId}/gamerscore`;
     const params = {
       token: useAuthStore().token,
     };
@@ -27,9 +27,9 @@ export default new (class LeaderboardsClient {
   }
 
   async getPlaytimeFriendsLeaderboard(
-    friendId: number
+    userId: number
   ): Promise<ISteamAPIResponse> {
-    const url = `${this.base_url}/${friendId}/playtime`;
+    const url = `${this.base_url}/${userId}/playtime`;
     const params = {
       token: useAuthStore().token,
     };
@@ -44,9 +44,9 @@ export default new (class LeaderboardsClient {
   }
 
   async getVersatilityScoreFriendsLeaderboard(
-    friendId: number
+    userId: number
   ): Promise<ISteamAPIResponse> {
-    const url = `${this.base_url}/${friendId}/versatility`;
+    const url = `${this.base_url}/${userId}/versatility`;
     const params = {
       token: useAuthStore().token,
     };
