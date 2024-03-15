@@ -2,6 +2,9 @@ import dataclasses
 import json
 from quart import Blueprint, request
 from httpx import AsyncClient
+
+from ..broker.types import RedisCacheKeyPattern
+from ..broker.cache import cached
 from ..api.types import SteamWebAPI, SteamworksAPI
 from ..api.utils import build_url, clean_obj, prepare_response
 
@@ -9,7 +12,7 @@ api = Blueprint("users", __name__, url_prefix="/users")
 
 
 @api.route("/<userid>/friends", methods=["GET"])
-# @cached(RedisCacheKeyPattern.USER_DATA, "friends")
+@cached(RedisCacheKeyPattern.USER_DATA, ["userid"], ["friends"])
 async def get_friend_list(userid, **kwargs):
     injected_client = kwargs.get("session")
     client = injected_client or AsyncClient()
@@ -72,10 +75,8 @@ async def get_recently_played_games(userid, **kwargs):
 
 
 @api.route("/<userid>/games", methods=["GET"])
-# @cached(RedisCacheKeyPattern.USER_DATA, "games")
+@cached(RedisCacheKeyPattern.USER_DATA, ["userid"], ["games"])
 async def get_owned_games(userid, **kwargs):
-    from ..app import logger
-
     injected_client = kwargs.get("session")
     client = injected_client or AsyncClient()
     result = prepare_response(
@@ -98,7 +99,6 @@ async def get_owned_games(userid, **kwargs):
             )
         )
     )
-    logger.info(userid)
     try:
         games = result.data["response"]["games"]
         games = [

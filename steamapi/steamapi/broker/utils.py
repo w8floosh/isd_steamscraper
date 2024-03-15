@@ -7,6 +7,13 @@ from ..api.types import SteamAPIResponse
 from .types import RedisMessage
 
 
+def build_json_path(*path):
+    pathstr = "$"
+    for level in path:
+        pathstr += f".{level}"
+    return pathstr
+
+
 async def setup_consumer(stream: str, name: str):
     try:
         await broker.connection.xinfo_stream("_".join([stream, name]))
