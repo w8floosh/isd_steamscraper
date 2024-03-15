@@ -1,3 +1,3 @@
 <template>
-    leaderboards
+    friends
 </template>

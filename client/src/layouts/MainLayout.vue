@@ -11,92 +11,148 @@
           @click="toggleLeftDrawer"
         />
 
-        <q-toolbar-title>
-          Quasar App
-        </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
+        <q-toolbar-title> SteamScraper </q-toolbar-title>
+        
+        
+          <q-chip
+            v-if="authenticated"
+            style="background-color: transparent"
+            dark
+          >
+            <q-avatar dense color="black">{{
+              user.name[0].toUpperCase()
+            }}</q-avatar>
+            {{ user.name }}
+          </q-chip>
+          <q-btn v-else label="login" @click="switchLoginDialog" />
+      </q-toolbar>
+      <q-toolbar inset>
+        <q-breadcrumbs>
+          <q-breadcrumbs-el v-for="page in breadcrumbs" :key="page.name" :label="page.name" :icon="page.icon" separator/>
+        </q-breadcrumbs>
       </q-toolbar>
     </q-header>
 
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      bordered
-    >
+    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
       <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
-        </q-item-label>
+        <q-item-label header> Navigation menu </q-item-label>
 
-        <EssentialLink
-          v-for="link in essentialLinks"
-          :key="link.title"
-          v-bind="link"
-        />
+        <DrawerOption v-for="link in links" :key="link.title" v-bind="link" />
       </q-list>
     </q-drawer>
 
     <q-page-container>
-      <router-view />
+      <router-view/>
+      <LoginDialog
+        v-if="loginDialogOpened"
+        v-model="loginDialogOpened"
+        @confirm="signIn"
+        @update:model-value="loginDialogOpened = false"
+      />
     </q-page-container>
   </q-layout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import EssentialLink, { EssentialLinkProps } from 'components/EssentialLink.vue';
+import { computed, ref } from 'vue';
+import { useAuthStore } from 'stores/auth';
+import DrawerOption from 'components/items/DrawerOption.vue';
+import LoginDialog from 'components/dialogs/LoginDialog.vue';
+import { UserCredentials } from 'src/composables/types';
+import { storeToRefs } from 'pinia';
+import { IBreadcrumbs, IDrawerOption } from 'src/components/models';
+import { RouteLocation, onBeforeRouteLeave } from 'vue-router';
 
-const essentialLinks: EssentialLinkProps[] = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
+onBeforeRouteLeave((to) => {
+  addBreadcrumbs(to)
+})
+
+const { signin } = useAuthStore();
+const { user, authenticated, loading } = storeToRefs(useAuthStore());
+
+const props = withDefaults(defineProps<{ auth?: string }>(), {
+  auth: 'false',
+});
+
+const loginDialogOpened = ref(props.auth == 'true');
+
+const avatarText = ref('');
+const breadcrumbs = ref<IBreadcrumbs[]>([{name: 'Home', icon: 'home'}])
+
+const signIn = async (credentials: UserCredentials) => {
+  if (!loading.value) {
+    await signin(credentials);
+    avatarText.value = user.value.name[0];
   }
+};
+
+/* add breadcrumbs data (name and icon) to the breadcrumbs array,
+if the route is a page listed in drawerOptions, delete all breadcrumbs and add the one relative to the page
+else add the page to the breadcrumbs array
+also, if the route is already in the breadcrumbs array, remove all the elements after it  
+*/
+function addBreadcrumbs(to: RouteLocation) {
+  if (to.name) {
+    const page = links.value.find((link) => link.endpoint === to.path);
+    if (page) {
+      breadcrumbs.value = [{name: page.title, icon: page.icon}]
+    } else {
+      const index = breadcrumbs.value.findIndex((el) => el.name === to.name);
+      if (index !== -1) {
+        breadcrumbs.value = breadcrumbs.value.slice(0, index + 1);
+      } else {
+        breadcrumbs.value.push({name: to.name.toString(), icon: to.meta.icon as string})
+      }
+    }
+  }
+}
+
+const switchLoginDialog = () =>
+  (loginDialogOpened.value = !loginDialogOpened.value);
+
+const publicDrawerOptions: IDrawerOption[] = [
+  {
+    title: 'Homepage',
+    icon: 'home',
+    endpoint: '/',
+  },
 ];
 
-const leftDrawerOpen = ref(false)
+const restrictedDrawerOptions: IDrawerOption[] = [
+  {
+    title: 'Stats',
+    caption: 'See your personal stats',
+    icon: 'query_stats',
+    endpoint: '/me',
+  },
+  {
+    title: 'App data',
+    caption: 'Get all details and news about a game/app',
+    icon: 'sports_esports',
+    endpoint: '/apps',
+  },
+  {
+    title: 'Friends',
+    caption: 'Show your friend list',
+    icon: 'group',
+    endpoint: '/friends',
+  },
+  {
+    title: 'Leaderboards',
+    caption: 'Who is the best among you and your friends?',
+    icon: 'leaderboard',
+    endpoint: '/leaderboards',
+  },
+];
+const leftDrawerOpen = ref(false);
+
+const links = computed(() =>
+  authenticated.value
+    ? publicDrawerOptions.concat(...restrictedDrawerOptions)
+    : publicDrawerOptions
+);
 
 function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value
+  leftDrawerOpen.value = !leftDrawerOpen.value;
 }
 </script>
