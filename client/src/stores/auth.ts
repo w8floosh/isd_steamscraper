@@ -1,28 +1,36 @@
 import { defineStore } from 'pinia';
-import { useAuthService } from '../composables/useAuthService';
+import { useAuthenticationService } from '../composables/useAuthenticationService';
 import { UserCredentials } from '../composables/types';
 import { computed, ref } from 'vue';
 
 const NOT_LOGGED = {
   name: '',
   email: '',
-  token: '',
-  nonce: '',
+  accessToken: '',
+  refreshToken: '',
 };
-const { login } = useAuthService();
+const { login } = useAuthenticationService();
 
 export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false);
   const user = ref(NOT_LOGGED);
 
-  const authenticated = computed(() => !!user.value.token);
-  const token = computed(() => user.value.token);
+  const authenticated = computed(
+    () => !!user.value.accessToken && !!user.value.refreshToken
+  );
+  const accessToken = computed(() => user.value.accessToken);
+  const refreshToken = computed(() => user.value.refreshToken);
 
   async function signin(credentials: UserCredentials) {
     loading.value = true;
-    //   user.value = (await login(credentials)).data;
-    user.value = await login(credentials);
-    console.log(authenticated.value);
+    const loginResponse = await login(credentials);
+    console.log(loginResponse);
+    user.value = {
+      name: loginResponse.data.name,
+      email: loginResponse.data.email,
+      accessToken: loginResponse.data.accessToken,
+      refreshToken: loginResponse.data.refreshToken,
+    };
     loading.value = false;
   }
   function logout() {
@@ -31,5 +39,13 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = false;
   }
 
-  return { user, authenticated, loading, token, signin, logout };
+  return {
+    user,
+    authenticated,
+    loading,
+    accessToken,
+    refreshToken,
+    signin,
+    logout,
+  };
 });
