@@ -35,3 +35,4 @@ __pycache__
 **/structures.json
 # steamapi/steamapi/.vscode/launch.json
 # steamapi/steamapi/structures.json
+**/certificates
