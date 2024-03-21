@@ -1,50 +1,34 @@
 import { JwtService } from '@jmondi/oauth2-server';
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  NestInterceptor,
-} from '@nestjs/common';
-import { Observable } from 'rxjs';
-import {
-  JWTDecodeException,
-  MalformedJIDException,
-  UserNotFoundException,
-} from 'src/lib/errors';
-import { UserService } from 'src/services/user.service';
+import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
+import { NextFunction, Request, Response } from 'express';
+import { JWTDecodeException, MalformedJIDException } from 'src/lib/errors';
+import { User } from '../entities';
 
 @Injectable()
-export class UserInterceptor implements NestInterceptor {
-  constructor(
-    private readonly jwtService: JwtService,
-    private readonly userService: UserService,
-  ) {}
-  async intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Promise<Observable<any>> {
-    const req = context.switchToHttp().getRequest();
+export class UserMiddleware implements NestMiddleware {
+  private readonly logger = new Logger(UserMiddleware.name);
+  constructor(private readonly jwtService: JwtService) {}
+  async use(req: Request, res: Response, next: NextFunction) {
     const jid = req.cookies?.jid;
 
-    if (!jid) return next.handle();
+    if (!jid) return next();
 
-    let userId: string | undefined;
+    let user: User;
 
     try {
       const decoded = await this.jwtService.verify(jid);
-      userId = decoded?.userId.toString();
+      user = decoded?.user as User;
     } catch (e) {
+      this.logger.error(e.message);
       throw new JWTDecodeException(e.message);
     }
 
-    if (!userId) throw new MalformedJIDException('userId');
+    if (!user) {
+      this.logger.error('Malformed JID');
+      throw new MalformedJIDException('user');
+    }
 
-    const user = await this.userService.getUserByCredentials(userId);
-
-    if (!user) throw new UserNotFoundException(userId);
-
-    req.user = user;
-
-    next.handle();
+    req['user'] = user;
+    return next();
   }
 }

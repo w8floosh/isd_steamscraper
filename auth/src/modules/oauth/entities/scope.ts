@@ -4,18 +4,13 @@ export class Scope implements OAuthScope {
   private constructor(
     public readonly id: string,
     public readonly name: string,
-    public readonly createdAt: Date,
   ) {}
 
   public static fromJSON(serialized: string) {
     return this.create(JSON.parse(serialized));
   }
-  public static create(data: any) {
+  public static create(data: OAuthScope) {
     if (!data.id || !data.name) return undefined;
-    return new Scope(
-      data.id,
-      data.name,
-      data.createdAt ? new Date(data.createdAt) : new Date(),
-    );
+    return new Scope(data.id, data.name);
   }
 }

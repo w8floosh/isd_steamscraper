@@ -7,6 +7,7 @@ import IndexPage from 'pages/IndexPage.vue';
 import AppsPage from 'pages/AppsPage.vue';
 import ErrorNotFound from 'pages/ErrorNotFound.vue';
 import FriendsPage from 'src/pages/FriendsPage.vue';
+import OAuthPage from 'src/pages/OAuthPage.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -17,7 +18,6 @@ const routes: RouteRecordRaw[] = [
       icon: 'home',
     },
   },
-
   {
     path: '/auth',
     component: MainLayout,
@@ -27,7 +27,14 @@ const routes: RouteRecordRaw[] = [
       icon: 'home',
     },
   },
-
+  {
+    path: '/oauth/',
+    component: MainLayout,
+    children: [{ path: '', component: OAuthPage }],
+    meta: {
+      icon: 'home',
+    },
+  },
   {
     path: '/me',
     component: MainLayout,

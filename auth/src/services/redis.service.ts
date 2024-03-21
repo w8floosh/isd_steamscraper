@@ -16,10 +16,10 @@ export class RedisService implements OnModuleDestroy, OnModuleInit {
     this.client = this.proxy.createClient();
   }
   async onModuleInit() {
-    while (true) {
-      this.logger.verbose(await this.client.ping());
-      await new Promise((resolve) => setTimeout(resolve, 10000));
-    }
+    // while (true) {
+    this.logger.verbose(await this.client.ping());
+    // await new Promise((resolve) => setTimeout(resolve, 10000));
+    // }
   }
   async onModuleDestroy() {
     await this.client.quit();

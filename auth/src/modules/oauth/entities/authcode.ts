@@ -1,13 +1,13 @@
 import { OAuthAuthCode, CodeChallengeMethod } from '@jmondi/oauth2-server';
 import { Client, Scope, User } from 'src/modules/oauth/entities';
 
-export class AuthCode implements OAuthAuthCode {
+export type AuthCodeRaw = Omit<OAuthAuthCode, 'user'> & { user?: User };
+export class AuthCode implements AuthCodeRaw {
   private constructor(
     public readonly code: string,
     public client: Client,
     public scopes: Scope[],
     public expiresAt: Date,
-    public createdAt: Date,
     public user?: User,
     public codeChallenge?: string,
     public codeChallengeMethod?: CodeChallengeMethod,
@@ -16,16 +16,13 @@ export class AuthCode implements OAuthAuthCode {
   public static fromJSON(serialized: string) {
     return this.create(JSON.parse(serialized));
   }
-  public static create(data: any) {
+  public static create(data: AuthCodeRaw) {
     if (!data.code || !data.client) return undefined;
     return new AuthCode(
       data.code,
-      data.client,
-      data.scopes?.map((s) => Scope.create(s)) || [],
-      data.expiresAt
-        ? new Date(data.expiresAt)
-        : new Date(Date.now() + 3600 * 1000),
-      data.createdAt ? new Date(data.createdAt) : new Date(),
+      Client.create(data.client),
+      data.scopes.map((s) => Scope.create(s)),
+      data.expiresAt,
       User.create(data.user),
       data.codeChallenge,
       data.codeChallengeMethod,

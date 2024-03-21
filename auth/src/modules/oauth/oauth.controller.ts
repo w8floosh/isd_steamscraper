@@ -9,8 +9,8 @@ import {
 } from '@nestjs/common';
 import { AuthorizationServer } from '@jmondi/oauth2-server';
 import { handleExpressResponse } from '@jmondi/oauth2-server/express';
-import type { Request, Response } from 'express';
-import { UserInterceptor } from './interceptors/user.interceptor';
+import { Request, Response } from 'express';
+import { UserMiddleware } from './interceptors/user.interceptor';
 import { User } from './entities';
 import { ClientService } from 'src/services/client.service';
 
@@ -34,7 +34,7 @@ export class OAuthController {
   }
 
   @Get('authorize')
-  @UseInterceptors(UserInterceptor)
+  @UseInterceptors(UserMiddleware)
   async authorizeRequest(
     @Req() request: Request & { user: User },
     @Res() response: Response,
@@ -42,8 +42,7 @@ export class OAuthController {
     const authRequest =
       await this.authorizationServer.validateAuthorizationRequest(request);
 
-    const user = request.user;
-    authRequest.user = user;
+    authRequest.user = request.user;
 
     authRequest.isAuthorizationApproved =
       !!authRequest.user &&
@@ -54,6 +53,12 @@ export class OAuthController {
 
     const oauthResponse =
       await this.authorizationServer.completeAuthorizationRequest(authRequest);
+    // avoid CORS preflight error
+    // response.setHeader(
+    //   'Access-Control-Allow-Origin',
+    //   response.getHeader('Access-Control-Allow-Origin').toString().concat('/'),
+    // );
+
     return handleExpressResponse(response, oauthResponse);
   }
 }

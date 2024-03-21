@@ -7,11 +7,13 @@ import {
   OAuthUser,
 } from '@jmondi/oauth2-server';
 import { RedisService } from './redis.service';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UseInterceptors } from '@nestjs/common';
+import { TOKENS_KEY } from 'src/lib/constants';
+import { RedisInterceptor } from 'src/modules/redis/redis.interceptor';
 
 @Injectable()
+@UseInterceptors(RedisInterceptor)
 export class TokenService implements OAuthTokenRepository {
-  private tokensKey = 'tokens';
   constructor(
     private readonly redisService: RedisService,
     private readonly jwtService: JwtService,
@@ -34,7 +36,7 @@ export class TokenService implements OAuthTokenRepository {
 
   async getByRefreshToken(refreshTokenToken: string): Promise<OAuthToken> {
     const token = await this.redisService.client.hget(
-      this.tokensKey,
+      TOKENS_KEY,
       refreshTokenToken,
     );
     return token ? JSON.parse(token) : null;
@@ -42,7 +44,7 @@ export class TokenService implements OAuthTokenRepository {
 
   async isRefreshTokenRevoked(refreshToken: OAuthToken): Promise<boolean> {
     return !!(await this.redisService.client.hexists(
-      this.tokensKey,
+      TOKENS_KEY,
       refreshToken.client.id,
     ));
   }
@@ -65,7 +67,7 @@ export class TokenService implements OAuthTokenRepository {
 
   async persist(accessToken: OAuthToken): Promise<void> {
     const result = await this.redisService.client.hset(
-      this.tokensKey,
+      TOKENS_KEY,
       accessToken.refreshToken,
       JSON.stringify(accessToken),
     );
@@ -75,7 +77,7 @@ export class TokenService implements OAuthTokenRepository {
   }
   async revoke(accessToken: OAuthToken): Promise<void> {
     const result = await this.redisService.client.hdel(
-      this.tokensKey,
+      TOKENS_KEY,
       accessToken.client.id,
     );
     if (!result) {

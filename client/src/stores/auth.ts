@@ -9,7 +9,7 @@ const NOT_LOGGED = {
   accessToken: '',
   refreshToken: '',
 };
-const { login } = useAuthenticationService();
+const { login, register } = useAuthenticationService();
 
 export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false);
@@ -21,10 +21,9 @@ export const useAuthStore = defineStore('auth', () => {
   const accessToken = computed(() => user.value.accessToken);
   const refreshToken = computed(() => user.value.refreshToken);
 
-  async function signin(credentials: UserCredentials) {
+  async function signin(credentials: UserCredentials, redirect_uri: string) {
     loading.value = true;
-    const loginResponse = await login(credentials);
-    console.log(loginResponse);
+    const loginResponse = await login(credentials, redirect_uri);
     user.value = {
       name: loginResponse.data.name,
       email: loginResponse.data.email,
@@ -32,6 +31,10 @@ export const useAuthStore = defineStore('auth', () => {
       refreshToken: loginResponse.data.refreshToken,
     };
     loading.value = false;
+  }
+
+  async function signup(credentials: UserCredentials) {
+    await register(credentials);
   }
   function logout() {
     loading.value = true;
@@ -46,6 +49,7 @@ export const useAuthStore = defineStore('auth', () => {
     accessToken,
     refreshToken,
     signin,
+    signup,
     logout,
   };
 });

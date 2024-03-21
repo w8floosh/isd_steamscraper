@@ -1,37 +1,37 @@
-import { api, auth } from 'src/boot/axios';
+import { auth } from 'src/boot/axios';
 import { UserCredentials } from './types';
 
+function getRandomHexString(chars: number) {
+  const symbols = '0123456789abcdef';
+  let result = '';
+  for (let i = 0; i < chars; i++) {
+    result += symbols[Math.floor(Math.random() * symbols.length)];
+  }
+  return result;
+}
+
 export const useAuthenticationService = () => {
-  const auth_url = process.env.AUTH_ENDPOINT;
-  const login = async (credentials: UserCredentials) => {
-    return await auth.post(
-      auth_url + '/login',
-      { credentials },
-      {
-        params: {
-          response_type: 'code',
-          client_id: 'steamscraper_client',
-          redirect_uri: api.defaults.baseURL,
-          state: Math.random().toString(36).substring(7),
-          code_challenge: Math.random().toString(36).substring(7),
-          code_challenge_method: 'S256',
-        },
-      }
-    );
+  const auth_url = process.env.AUTH_ENDPOINT || auth.defaults.baseURL;
+  const login = async (credentials: UserCredentials, redirect_uri: string) => {
+    return await auth.post(auth_url + 'login', credentials, {
+      params: {
+        response_type: 'code',
+        client_id: 'steamscraper_client',
+        redirect_uri,
+        state: getRandomHexString(16),
+        code_challenge: getRandomHexString(64),
+        code_challenge_method: 'S256',
+      },
+      withCredentials: true,
+    });
   };
 
-  const verify = async (token: string) => {
-    return await auth.post(auth_url + '/verify', { token });
+  const register = async (credentials: UserCredentials) => {
+    return await auth.post(auth_url + 'login/signup', credentials);
   };
-  return { login };
+
+  return { login, register };
 };
-
-// ({
-//   name: 'me',
-//   email: 'me@gmail.com',
-//   token: 'ffff',
-//   nonce: '0123456789abcdef',
-// });
 
 // response_type must be set to code
 // client_id is the client identifier you received when you first created the application

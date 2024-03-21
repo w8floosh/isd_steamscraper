@@ -1,4 +1,12 @@
-import { Body, Controller, Inject, Post, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Inject,
+  Post,
+  Req,
+  Res,
+  UseInterceptors,
+} from '@nestjs/common';
 import { AuthorizationServer, JwtService } from '@jmondi/oauth2-server';
 import { Request, Response } from 'express';
 import { UserService } from './services/user.service';
@@ -7,22 +15,33 @@ import { User } from './modules/oauth/entities';
 import { hash } from 'bcrypt';
 import { SALT_ROUNDS } from './lib/constants';
 import { InvalidCredentialsException } from './lib/errors';
+import { ClientService } from './services/client.service';
+import { RedisInterceptor } from './modules/redis/redis.interceptor';
 
 @Controller('login')
+@UseInterceptors(RedisInterceptor)
 export class LoginController {
   constructor(
     @Inject('AUTH_SERVER')
     private readonly authorizationServer: AuthorizationServer,
     private readonly jwtService: JwtService,
     private readonly userService: UserService,
+    private readonly clientService: ClientService,
   ) {}
 
   @Post()
   async login(
     @Req() request: Request,
-    @Res() response: Response,
+    @Res({ passthrough: true }) response: Response,
     @Body() credentials: UserCredentialsDto,
   ): Promise<void> {
+    if (
+      !(await this.clientService.getByIdentifier(
+        request.query.client_id as string,
+      ))
+    )
+      await this.clientService.register(request);
+
     const authRequest =
       await this.authorizationServer.validateAuthorizationRequest(request);
 
@@ -45,33 +64,39 @@ export class LoginController {
     await this.userService.updateUser(updatedUser);
 
     const token = await this.jwtService.sign({
-      userId: user.id,
-      email: user.email,
-
+      user: updatedUser,
       iat: Math.floor(Date.now() / 1000),
-      exp: Date.now() + 5 * 1000, // 5 seconds
+      exp: Math.floor((Date.now() + 60 * 1000) / 1000), // 5 seconds
     });
 
     response.cookie('jid', token, {
       secure: true,
       httpOnly: true,
-      sameSite: 'strict',
+      sameSite: 'none',
       expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000), // 30 days
     });
 
     // query URL must have the following params at this point: response_type, client_id, redirect_uri, scope, state, code_challenge, code_challenge_method
     const query = request.url.split('?')[1];
-    response.redirect(`/oauth2/authorize?${query}`);
+    response.redirect(`/oauth/authorize?${query}`);
   }
 
   @Post('/signup')
-  async signup(@Body() credentials: UserCredentialsDto): Promise<void> {
+  async signup(
+    @Req() request: Request,
+    @Body() credentials: UserCredentialsDto,
+  ): Promise<void> {
     const { email, password } = credentials;
     await this.userService.registerUser(
       User.create({
-        id: await hash(email, SALT_ROUNDS),
+        id: email.concat(await hash(email, SALT_ROUNDS)),
         email,
+        username: email,
         passwordHash: await hash(password, SALT_ROUNDS),
+        createdAt: new Date(),
+        createdIP: request.ip,
+        lastLoginAt: undefined,
+        lastLoginIP: undefined,
       }),
     );
   }

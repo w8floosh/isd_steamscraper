@@ -6,13 +6,13 @@ import {
 
 abstract class TokenError extends Error {}
 
-export class PersistenceError extends Error {
+export class PersistenceException extends InternalServerErrorException {
   constructor(entity: string) {
     super(`Failed to persist ${entity}`);
   }
 }
 
-export class RedisError extends Error {
+export class RedisException extends InternalServerErrorException {
   constructor(message: string) {
     super(`Could not connect to Redis: ${message}`);
   }

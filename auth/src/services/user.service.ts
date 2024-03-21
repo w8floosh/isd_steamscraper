@@ -6,33 +6,45 @@ import {
 } from '@jmondi/oauth2-server';
 import { RedisService } from './redis.service';
 import { User } from 'src/modules/oauth/entities';
-import { InvalidCredentialsException, PersistenceError } from 'src/lib/errors';
-import { hash } from 'bcrypt';
-import { SALT_ROUNDS } from 'src/lib/constants';
-import { Injectable } from '@nestjs/common';
+import {
+  InvalidCredentialsException,
+  PersistenceException,
+} from 'src/lib/errors';
+import { compare } from 'bcrypt';
+import { Injectable, Logger, UseInterceptors } from '@nestjs/common';
+import { USERS_KEY } from 'src/lib/constants';
+import { RedisInterceptor } from 'src/modules/redis/redis.interceptor';
 
 @Injectable()
+@UseInterceptors(RedisInterceptor)
 export class UserService implements OAuthUserRepository {
-  private usersKey = 'users';
-
+  private readonly logger = new Logger(UserService.name);
   constructor(private readonly redisService: RedisService) {}
+
   async getUserByCredentials(
     identifier: OAuthUserIdentifier,
     password?: string,
     grantType?: GrantIdentifier,
     client?: OAuthClient,
   ): Promise<User | undefined> {
-    const id = await hash(identifier.toString(), SALT_ROUNDS);
-    const user = await this.redisService.client.hget(this.usersKey, id);
+    const user = await this.redisService.client.hscan(
+      USERS_KEY,
+      0,
+      'MATCH',
+      `*${identifier}*`,
+    );
 
-    if (user) {
-      const parsed = User.fromJSON(user);
-      if (id && !password && !grantType && !client) return parsed;
+    if (user[1]) {
+      const parsed = User.fromJSON(user[1][1]);
+      let passwordMatches: boolean;
+      if (password)
+        passwordMatches = await compare(password, parsed.passwordHash);
+      if (identifier && !password && !grantType && !client) return parsed;
       if (
         password &&
         grantType &&
         client &&
-        parsed.passwordHash === (await hash(password, SALT_ROUNDS)) &&
+        passwordMatches &&
         client.allowedGrants.includes(grantType)
       ) {
         return parsed;
@@ -43,19 +55,22 @@ export class UserService implements OAuthUserRepository {
 
   async registerUser(user: User) {
     const result = await this.redisService.client.hsetnx(
-      this.usersKey,
-      user.id.toString(),
+      USERS_KEY,
+      user.id as string,
       JSON.stringify(user),
     );
-    if (!result) throw new PersistenceError('user registration');
+    if (!result) throw new PersistenceException('user registration');
   }
 
   async updateUser(user: User) {
-    const result = await this.redisService.client.hset(
-      this.usersKey,
-      user.id.toString(),
+    const error = await this.redisService.client.hset(
+      USERS_KEY,
+      user.id as string,
       JSON.stringify(user),
     );
-    if (!result) throw new PersistenceError('user update');
+    if (error) {
+      this.logger.error(`Failed to persist user ${user.id}`);
+      throw new PersistenceException('user update');
+    }
   }
 }

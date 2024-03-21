@@ -7,9 +7,11 @@ import {
 } from '@jmondi/oauth2-server';
 import { RedisService } from './redis.service';
 import { JwtService } from '@jmondi/oauth2-server';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UseInterceptors } from '@nestjs/common';
+import { RedisInterceptor } from 'src/modules/redis/redis.interceptor';
 
 @Injectable()
+@UseInterceptors(RedisInterceptor)
 export class AuthcodeService implements OAuthAuthCodeRepository {
   private authcodesKey = 'authcodes';
   constructor(
