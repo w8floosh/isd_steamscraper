@@ -24,7 +24,10 @@
             }}</q-avatar>
             {{ user.name }}
           </q-chip>
-          <q-btn v-else label="login" @click="switchLoginDialog" />
+          <q-btn-group  v-else>
+            <q-btn label="login" @click="switchLoginDialog" />
+            <q-btn label="register" @click="switchRegisterDialog" />
+          </q-btn-group>
       </q-toolbar>
       <q-toolbar inset>
         <q-breadcrumbs>
@@ -43,11 +46,12 @@
 
     <q-page-container>
       <router-view/>
-      <LoginDialog
-        v-if="loginDialogOpened"
-        v-model="loginDialogOpened"
+      <CredentialsDialog
+        v-if="credentialsDialogOpened"
+        v-model="credentialsDialogOpened"
+        :dialogMode="dialogMode"
         @confirm="signIn"
-        @update:model-value="loginDialogOpened = false"
+        @update:model-value="credentialsDialogOpened = false"
       />
     </q-page-container>
   </q-layout>
@@ -57,32 +61,40 @@
 import { computed, ref } from 'vue';
 import { useAuthStore } from 'stores/auth';
 import DrawerOption from 'components/items/DrawerOption.vue';
-import LoginDialog from 'components/dialogs/LoginDialog.vue';
+import CredentialsDialog from 'components/dialogs/CredentialsDialog.vue';
 import { UserCredentials } from 'src/composables/types';
 import { storeToRefs } from 'pinia';
 import { IBreadcrumbs, IDrawerOption } from 'src/components/models';
-import { RouteLocation, onBeforeRouteLeave } from 'vue-router';
+import { RouteLocation, onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 
 onBeforeRouteLeave((to) => {
   addBreadcrumbs(to)
 })
 
-const { signin } = useAuthStore();
+const { signin, signup } = useAuthStore();
 const { user, authenticated, loading } = storeToRefs(useAuthStore());
+const route = useRoute();
+const router = useRouter();
+
 
 const props = withDefaults(defineProps<{ auth?: string }>(), {
   auth: 'false',
 });
 
-const loginDialogOpened = ref(props.auth == 'true');
-
+const credentialsDialogOpened = ref(props.auth == 'true');
+const dialogMode = ref<'login' | 'register'>('login'); 
 const avatarText = ref('');
 const breadcrumbs = ref<IBreadcrumbs[]>([{name: 'Home', icon: 'home'}])
 
 const signIn = async (credentials: UserCredentials) => {
   if (!loading.value) {
-    await signin(credentials);
-    avatarText.value = user.value.name[0];
+    const routePath = router.resolve(route.fullPath).href
+    const absoluteURL = new URL(routePath, window.location.origin).href
+    if (dialogMode.value === 'login'){
+      await signin(credentials, absoluteURL.concat('oauth/'));
+      avatarText.value = user.value.name[0];
+    }
+    else await signup(credentials)
   }
 };
 
@@ -101,14 +113,21 @@ function addBreadcrumbs(to: RouteLocation) {
       if (index !== -1) {
         breadcrumbs.value = breadcrumbs.value.slice(0, index + 1);
       } else {
-        breadcrumbs.value.push({name: to.name.toString(), icon: to.meta.icon as string})
+        breadcrumbs.value.push({name: to.name as string, icon: to.meta.icon as string})
       }
     }
   }
 }
 
-const switchLoginDialog = () =>
-  (loginDialogOpened.value = !loginDialogOpened.value);
+const switchLoginDialog = () => {
+  credentialsDialogOpened.value = !credentialsDialogOpened.value;
+  dialogMode.value = 'login';
+}
+
+const switchRegisterDialog = () => {
+  credentialsDialogOpened.value = !credentialsDialogOpened.value;
+  dialogMode.value = 'register';
+}
 
 const publicDrawerOptions: IDrawerOption[] = [
   {
