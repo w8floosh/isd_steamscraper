@@ -89,8 +89,8 @@ module.exports = configure(function (/* ctx */) {
     devServer: {
       open: true, // opens browser window automatically
       https: {
-        cert: 'src/boot/certificates/steamscraper_client.crt',
-        key: 'src/boot/certificates/steamscraper_client.key'
+        cert: process.env.CERT_PATH || 'src/certificates/steamscraper_client.crt',
+        key: process.env.CERTKEY_PATH || 'src/certificates/steamscraper_client.key'
       },
       host: 'steamscraper',
       cors: {
