@@ -1,5 +1,5 @@
 import { auth } from 'src/boot/axios';
-import { UserCredentials } from './types';
+import { TokenResponse, UserCredentials } from './types';
 
 function getRandomHexString(chars: number) {
   const symbols = '0123456789abcdef';
@@ -11,12 +11,15 @@ function getRandomHexString(chars: number) {
 }
 
 export const useAuthenticationService = () => {
-  const auth_url = process.env.AUTH_ENDPOINT || auth.defaults.baseURL;
+  const auth_url = process.env.AUTH_SERVER_URL || auth.defaults.baseURL;
   const login = async (credentials: UserCredentials, redirect_uri: string) => {
-    return await auth.post(auth_url + 'login', credentials, {
+    const authCode = await auth.post(auth_url + '/login', credentials, {
       params: {
         response_type: 'code',
-        client_id: 'steamscraper_client',
+        client_id:
+          process.env.NODE_ENV === 'production'
+            ? 'steamscraper_client'
+            : 'debug',
         redirect_uri,
         state: getRandomHexString(16),
         code_challenge: getRandomHexString(64),
@@ -24,13 +27,39 @@ export const useAuthenticationService = () => {
       },
       withCredentials: true,
     });
+    return {
+      authCode: authCode.data.code,
+      clientState: authCode.data.state,
+      user: authCode.data.user,
+    };
   };
 
   const register = async (credentials: UserCredentials) => {
-    return await auth.post(auth_url + 'login/signup', credentials);
+    return await auth.post(auth_url + '/login/signup', credentials);
   };
 
-  return { login, register };
+  const issueTokens = async (
+    authCode: string,
+    clientState: string,
+    redirect_uri: string
+  ) => {
+    return await auth.post<TokenResponse>(auth_url + '/oauth/token', {
+      grant_type: 'authorization_code',
+      code: authCode,
+      redirect_uri,
+      client_id:
+        process.env.NODE_ENV === 'production' ? 'steamscraper_client' : 'debug',
+      code_verifier: clientState,
+    });
+  };
+
+  //   token_type will always be Bearer
+  // expires_in is the time the token will live in seconds
+  // access_token is a JWT signed token and is used to authenticate into the resource server
+  // refresh_token is a JWT signed token and can be used in with the refresh grant
+  // scope is a space delimited list of scopes the token has access to
+
+  return { login, register, issueTokens };
 };
 
 // response_type must be set to code

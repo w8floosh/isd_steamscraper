@@ -1,5 +1,5 @@
 import { OAuthAuthCode, CodeChallengeMethod } from '@jmondi/oauth2-server';
-import { Client, Scope, User } from 'src/modules/oauth/entities';
+import { Client, Scope, User } from 'src/entities';
 
 export type AuthCodeRaw = Omit<OAuthAuthCode, 'user'> & { user?: User };
 export class AuthCode implements AuthCodeRaw {

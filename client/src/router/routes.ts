@@ -24,16 +24,13 @@ const routes: RouteRecordRaw[] = [
     children: [{ path: '', component: IndexPage }],
     props: { auth: 'true' },
     meta: {
-      icon: 'home',
+      icon: 'lock',
     },
   },
   {
-    path: '/oauth/',
+    path: '/oauth',
     component: MainLayout,
-    children: [{ path: '', component: OAuthPage }],
-    meta: {
-      icon: 'home',
-    },
+    children: [{ path: 'redirect', component: OAuthPage }],
   },
   {
     path: '/me',

@@ -7,26 +7,45 @@ import {
 } from '@jmondi/oauth2-server';
 import { RedisService } from './redis.service';
 import { JwtService } from '@jmondi/oauth2-server';
-import { Injectable, UseInterceptors } from '@nestjs/common';
-import { RedisInterceptor } from 'src/modules/redis/redis.interceptor';
+import { Injectable, OnModuleInit, UseInterceptors } from '@nestjs/common';
+import { RedisInterceptor } from 'src/controllers/interceptors/redis.interceptor';
+import { AUTHCODES_KEY } from 'src/lib/constants';
 
 @Injectable()
 @UseInterceptors(RedisInterceptor)
-export class AuthcodeService implements OAuthAuthCodeRepository {
-  private authcodesKey = 'authcodes';
+export class AuthcodeService implements OAuthAuthCodeRepository, OnModuleInit {
   constructor(
     private readonly redisService: RedisService,
     private readonly jwtService: JwtService,
   ) {}
 
+  async onModuleInit() {
+    setInterval(
+      async () => {
+        const keys = await this.redisService.client.hkeys(AUTHCODES_KEY);
+        for (const key of keys) {
+          const code: OAuthAuthCode = JSON.parse(
+            await this.redisService.client.hget(AUTHCODES_KEY, key),
+          );
+
+          if (new Date(code.expiresAt) < new Date()) {
+            await this.redisService.client.hdel(AUTHCODES_KEY, key);
+          }
+        }
+      },
+      1000 * 60 * 5,
+    );
+  }
+
   async getByIdentifier(authcodeCode: string): Promise<OAuthAuthCode> {
     const code = await this.redisService.client.hget(
-      this.authcodesKey,
+      AUTHCODES_KEY,
       authcodeCode,
     );
     if (!code) {
       return null;
     }
+    console.log('got code starting with:', code.split('.')[0]);
     const parsed = JSON.parse(code) as OAuthAuthCode;
     return parsed;
   }
@@ -45,31 +64,33 @@ export class AuthcodeService implements OAuthAuthCodeRepository {
       code,
       expiresAt,
     };
+    console.log('issued', authCode.code.split('.')[0]);
 
     return authCode;
   }
   async persist(authCode: OAuthAuthCode): Promise<void> {
     const result = await this.redisService.client.hset(
-      this.authcodesKey,
+      AUTHCODES_KEY,
       authCode.code,
       JSON.stringify(authCode),
     );
+    console.log('persisted', result, authCode.code.split('.')[0]);
+
     if (!result) {
       throw new Error('Failed to persist authcode: ' + authCode.code);
     }
   }
   async isRevoked(authcode: string): Promise<boolean> {
-    return !!(await this.redisService.client.hexists(
-      this.authcodesKey,
+    const revoked = !!(await this.redisService.client.hexists(
+      AUTHCODES_KEY,
       authcode,
     ));
+    console.log('isRevoked', revoked, authcode.split('.')[0]);
+    return revoked;
   }
 
   async revoke(authcode: string): Promise<void> {
-    const result = await this.redisService.client.hdel(
-      this.authcodesKey,
-      authcode,
-    );
+    const result = await this.redisService.client.hdel(AUTHCODES_KEY, authcode);
     if (!result) {
       throw new Error('Failed to revoke authcode: ' + authcode);
     }

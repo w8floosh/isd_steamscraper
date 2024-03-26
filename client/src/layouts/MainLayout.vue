@@ -71,7 +71,7 @@ onBeforeRouteLeave((to) => {
   addBreadcrumbs(to)
 })
 
-const { signin, signup } = useAuthStore();
+const { authenticate, signup } = useAuthStore();
 const { user, authenticated, loading } = storeToRefs(useAuthStore());
 const route = useRoute();
 const router = useRouter();
@@ -91,8 +91,9 @@ const signIn = async (credentials: UserCredentials) => {
     const routePath = router.resolve(route.fullPath).href
     const absoluteURL = new URL(routePath, window.location.origin).href
     if (dialogMode.value === 'login'){
-      await signin(credentials, absoluteURL.concat('oauth/'));
+      await authenticate(credentials, absoluteURL.concat('oauth/'));
       avatarText.value = user.value.name[0];
+      router.push(`/oauth/redirect`)
     }
     else await signup(credentials)
   }
@@ -135,6 +136,12 @@ const publicDrawerOptions: IDrawerOption[] = [
     icon: 'home',
     endpoint: '/',
   },
+  {
+    title: 'test',
+    icon: 'home',
+    endpoint: '/oauth/redirect',
+  },
+  
 ];
 
 const restrictedDrawerOptions: IDrawerOption[] = [

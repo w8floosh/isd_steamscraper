@@ -1,7 +1,6 @@
 import asyncio
 import dataclasses
 from sys import stderr
-from aspectlib import weave
 from quart import Blueprint, request
 from httpx import AsyncClient
 

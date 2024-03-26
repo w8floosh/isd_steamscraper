@@ -11,6 +11,13 @@
 
 const { configure } = require('quasar/wrappers');
 
+const {
+  authServerURL,
+  steamAPIProxyURL,
+  CORSOriginURL,
+  quasarAppCertificatePath,
+  quasarAppCertificateKeyPath,
+} = require('./env.prod.js');
 
 module.exports = configure(function (/* ctx */) {
   return {
@@ -69,7 +76,10 @@ module.exports = configure(function (/* ctx */) {
 
       // publicPath: '/',
       // analyze: true,
-      // env: {},
+      env: {
+        AUTH_SERVER_URL: authServerURL,
+        STEAMAPI_PROXY_URL: steamAPIProxyURL,
+      },
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,
@@ -89,14 +99,12 @@ module.exports = configure(function (/* ctx */) {
     devServer: {
       open: true, // opens browser window automatically
       https: {
-        cert: process.env.CERT_PATH || 'src/certificates/steamscraper_client.crt',
-        key: process.env.CERTKEY_PATH || 'src/certificates/steamscraper_client.key'
+        cert: quasarAppCertificatePath,
+        key: quasarAppCertificateKeyPath
       },
       host: 'steamscraper',
-      cors: {
-        origin: process.env.CORS_ORIGIN || 'https://steamscraper:9000',
-        credentials: true,
-      }
+      // cors: false
+      cors: CORSOriginURL? { origin: CORSOriginURL, credentials: true } : false
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework

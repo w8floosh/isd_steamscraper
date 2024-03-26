@@ -1,6 +1,4 @@
-import dataclasses
-import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from enum import Enum
 from functools import wraps
 from hashlib import sha256
@@ -11,7 +9,7 @@ from datetime import datetime, UTC
 from circuitbreaker import circuit, CircuitBreakerError
 
 CONSUMER_NAME = str(sha256(getnode().to_bytes(6)).digest().hex())
-GROUP_NAME = os.getenv("STEAMAPI_CG", "steamapi_cg")
+GROUP_NAME = getenv("STEAMAPI_CG", "steamapi_cg")
 RESPONSES_STREAM = "responses"
 REQUESTS_STREAM = "requests"
 
@@ -85,7 +83,7 @@ class RedisManager:
 
         # Create a new Redis connection
         self.connection = await from_url(
-            f"redis://{self._login['url']}:{self._login['port']}/0"
+            f"redis://{self._login.get('host')}:{self._login.get('port')}/0"
         )
 
         self.last_connection_attempt = int(datetime.now(UTC).timestamp())
@@ -120,7 +118,7 @@ class RedisManager:
                         )
                         if skip_on_failure:
                             break
-                        return dataclasses.asdict(
+                        return asdict(
                             SteamAPIResponse(
                                 False,
                                 {},

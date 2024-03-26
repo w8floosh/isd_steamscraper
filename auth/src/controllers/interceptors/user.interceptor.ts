@@ -2,7 +2,7 @@ import { JwtService } from '@jmondi/oauth2-server';
 import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { JWTDecodeException, MalformedJIDException } from 'src/lib/errors';
-import { User } from '../entities';
+import { User } from '../../entities';
 
 @Injectable()
 export class UserMiddleware implements NestMiddleware {

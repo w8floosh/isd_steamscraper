@@ -1,6 +1,9 @@
 import { api as axios } from 'src/boot/axios';
 import { ISteamAPIResponse } from './types';
 import { useAuthStore } from 'src/stores/auth';
+import { storeToRefs } from 'pinia';
+
+const { APIToken: token } = storeToRefs(useAuthStore());
 
 export default new (class LeaderboardsClient {
   private base_url =
@@ -11,7 +14,7 @@ export default new (class LeaderboardsClient {
   ): Promise<ISteamAPIResponse> {
     const url = `${this.base_url}/${userId}/gamerscore`;
     const params = {
-      token: useAuthStore().token,
+      token,
     };
 
     try {
@@ -31,7 +34,7 @@ export default new (class LeaderboardsClient {
   ): Promise<ISteamAPIResponse> {
     const url = `${this.base_url}/${userId}/playtime`;
     const params = {
-      token: useAuthStore().token,
+      token,
     };
 
     try {
@@ -48,7 +51,7 @@ export default new (class LeaderboardsClient {
   ): Promise<ISteamAPIResponse> {
     const url = `${this.base_url}/${userId}/versatility`;
     const params = {
-      token: useAuthStore().token,
+      token,
     };
 
     try {

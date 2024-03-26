@@ -14,3 +14,11 @@ export type GetAppDataOptions = {
     maxlength?: number;
   };
 };
+
+export type TokenResponse = {
+  token_type: 'Bearer';
+  expires_in: number;
+  access_token: string;
+  refresh_token: string;
+  scope: string;
+};

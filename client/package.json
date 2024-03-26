@@ -9,10 +9,11 @@
     "lint": "eslint --ext .js,.ts,.vue ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"No test specified\" && exit 0",
-    "dev": "quasar dev",
-    "build": "quasar build"
+    "dev": "npx dotenvx run --env-file=.env.local -- quasar dev",
+    "build": "ENVIRONMENT=prod quasar build"
   },
   "dependencies": {
+    "@nestjs/config": "^3.2.1",
     "@quasar/extras": "^1.16.4",
     "axios": "^1.2.1",
     "bcrypt": "^5.1.1",
@@ -24,12 +25,14 @@
     "vue-router": "^4.0.12"
   },
   "devDependencies": {
+    "@dotenvx/dotenvx": "^0.27.0",
     "@quasar/app-vite": "^1.4.3",
     "@types/bcrypt": "^5.0.2",
     "@types/node": "^12.20.21",
     "@typescript-eslint/eslint-plugin": "^5.10.0",
     "@typescript-eslint/parser": "^5.10.0",
     "autoprefixer": "^10.4.2",
+    "dotenv": "^16.4.5",
     "eslint": "^8.11.0",
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-vue": "^9.0.0",

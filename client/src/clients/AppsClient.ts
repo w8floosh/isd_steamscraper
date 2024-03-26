@@ -2,22 +2,24 @@ import { api as axios } from 'src/boot/axios';
 import { ISteamAPIResponse } from './types';
 import { useAuthStore } from 'src/stores/auth';
 import { IAppMetadata } from 'src/components/models';
+import { storeToRefs } from 'pinia';
+
+const { APIToken: token } = storeToRefs(useAuthStore());
 
 export default new (class AppsClient {
-  private base_url = process.env.STEAMAPI_PROXY_URL || '';
   private endpoint_apps = '/stats/apps';
   private endpoint_store = '/store';
-  private endpoint_news = '/news';
 
+  private endpoint_news = '/news';
   async getAppList(
     max_results?: number,
     last_appid?: string
   ): Promise<ISteamAPIResponse<IAppMetadata>> {
-    const url = this.base_url + this.endpoint_store;
+    const url = process.env.STEAMAPI_PROXY_URL + this.endpoint_store;
     const params = {
       max_results,
       last_appid,
-      token: useAuthStore().token,
+      token,
     };
 
     try {
@@ -36,12 +38,12 @@ export default new (class AppsClient {
     count?: number,
     maxlength?: number
   ): Promise<ISteamAPIResponse> {
-    const url = this.base_url + this.endpoint_news;
+    const url = process.env.STEAMAPI_PROXY_URL + this.endpoint_news;
     const params = {
       id,
       count,
       maxlength,
-      token: useAuthStore().token,
+      token,
     };
 
     try {
@@ -61,13 +63,14 @@ export default new (class AppsClient {
     cc?: string,
     language?: string
   ): Promise<ISteamAPIResponse> {
-    const url = this.base_url + this.endpoint_store + '/details';
+    const url =
+      process.env.STEAMAPI_PROXY_URL + this.endpoint_store + '/details';
     const params = {
       id,
       filters,
       cc,
       language,
-      token: useAuthStore().token,
+      token,
     };
 
     try {
@@ -84,9 +87,13 @@ export default new (class AppsClient {
   async getAppGlobalAchievementPercentages(
     gameid: string
   ): Promise<ISteamAPIResponse> {
-    const url = this.base_url + this.endpoint_apps + gameid + '/achievements';
+    const url =
+      process.env.STEAMAPI_PROXY_URL +
+      this.endpoint_apps +
+      gameid +
+      '/achievements';
     const params = {
-      token: useAuthStore().token,
+      token,
     };
 
     try {
@@ -101,9 +108,10 @@ export default new (class AppsClient {
   }
 
   async getCurrentPlayers(id: string): Promise<ISteamAPIResponse> {
-    const url = this.base_url + this.endpoint_apps + id + '/current';
+    const url =
+      process.env.STEAMAPI_PROXY_URL + this.endpoint_apps + id + '/current';
     const params = {
-      token: useAuthStore().token,
+      token,
     };
 
     try {

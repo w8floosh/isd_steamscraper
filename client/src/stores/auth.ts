@@ -8,29 +8,37 @@ const NOT_LOGGED = {
   email: '',
   accessToken: '',
   refreshToken: '',
+  APIToken: '',
 };
-const { login, register } = useAuthenticationService();
+const { login, register, issueTokens } = useAuthenticationService();
 
 export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false);
   const user = ref(NOT_LOGGED);
+  const clientState = ref('');
+  const authCode = ref('');
 
   const authenticated = computed(
     () => !!user.value.accessToken && !!user.value.refreshToken
   );
   const accessToken = computed(() => user.value.accessToken);
   const refreshToken = computed(() => user.value.refreshToken);
+  const APIToken = computed(() => user.value.APIToken);
 
-  async function signin(credentials: UserCredentials, redirect_uri: string) {
+  async function authenticate(
+    credentials: UserCredentials,
+    redirect_uri: string
+  ) {
     loading.value = true;
     const loginResponse = await login(credentials, redirect_uri);
     user.value = {
-      name: loginResponse.data.name,
-      email: loginResponse.data.email,
-      accessToken: loginResponse.data.accessToken,
-      refreshToken: loginResponse.data.refreshToken,
+      ...user.value,
+      name: loginResponse.user.username,
+      email: loginResponse.user.email,
     };
     loading.value = false;
+    clientState.value = loginResponse.clientState;
+    authCode.value = loginResponse.authCode;
   }
 
   async function signup(credentials: UserCredentials) {
@@ -42,14 +50,26 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = false;
   }
 
+  async function authorize(
+    authCode: string,
+    clientState: string,
+    redirect_uri: string
+  ) {
+    return await issueTokens(authCode, clientState, redirect_uri);
+  }
+
   return {
     user,
+    clientState,
+    authCode,
     authenticated,
     loading,
     accessToken,
     refreshToken,
-    signin,
+    APIToken,
+    authenticate,
     signup,
     logout,
+    authorize,
   };
 });

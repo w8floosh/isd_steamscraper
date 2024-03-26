@@ -7,10 +7,10 @@ import {
 } from '@jmondi/oauth2-server';
 import { RedisService } from './redis.service';
 import { RedisException, ScopeNotFoundException } from 'src/lib/errors';
-import { Scope } from 'src/modules/oauth/entities';
+import { Scope } from 'src/entities';
 import { Injectable, OnModuleInit, UseInterceptors } from '@nestjs/common';
 import { SCOPES_KEY } from 'src/lib/constants';
-import { RedisInterceptor } from 'src/modules/redis/redis.interceptor';
+import { RedisInterceptor } from 'src/controllers/interceptors/redis.interceptor';
 
 @Injectable()
 @UseInterceptors(RedisInterceptor)

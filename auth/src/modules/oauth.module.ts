@@ -6,16 +6,19 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
+// import { ConfigModule } from '@nestjs/config';
 import { AuthorizationServer, JwtService } from '@jmondi/oauth2-server';
-import { AuthcodeService } from '../../services/authcode.service';
-import { ClientService } from '../../services/client.service';
-import { TokenService } from '../../services/token.service';
+import { AuthcodeService } from '../services/authcode.service';
+import { ClientService } from '../services/client.service';
+import { TokenService } from '../services/token.service';
 import { ScopeService } from 'src/services/scope.service';
 import { UserService } from 'src/services/user.service';
-import { OAuthController } from './oauth.controller';
-import { UserMiddleware } from './interceptors/user.interceptor';
-import { RedisModule } from '../redis/redis.module';
-import { LoginController } from 'src/login.controller';
+import { OAuthController } from '../controllers/oauth.controller';
+import { UserMiddleware } from '../controllers/interceptors/user.interceptor';
+import { RedisModule } from './redis.module';
+import { LoginController } from 'src/controllers/login.controller';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { configuration } from 'src/lib/configuration';
 
 const AuthorizationServerFactory: FactoryProvider<AuthorizationServer> = {
   provide: 'AUTH_SERVER',
@@ -51,9 +54,16 @@ const AuthorizationServerFactory: FactoryProvider<AuthorizationServer> = {
 };
 
 @Module({
-  imports: [RedisModule],
+  imports: [
+    RedisModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration],
+    }),
+  ],
   controllers: [OAuthController, LoginController],
   providers: [
+    ConfigService,
     Logger,
     AuthcodeService,
     ClientService,
@@ -63,7 +73,7 @@ const AuthorizationServerFactory: FactoryProvider<AuthorizationServer> = {
     AuthorizationServerFactory,
     {
       provide: JwtService,
-      useFactory: () => new JwtService('your-secret-here'),
+      useValue: new JwtService('your-secret-here'),
     },
   ],
   exports: [AuthorizationServerFactory],

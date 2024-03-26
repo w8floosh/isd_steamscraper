@@ -1,6 +1,9 @@
 import { api as axios } from 'src/boot/axios';
 import { ISteamAPIResponse } from './types';
 import { useAuthStore } from 'src/stores/auth';
+import { storeToRefs } from 'pinia';
+
+const { APIToken: token } = storeToRefs(useAuthStore());
 
 export default new (class UserClient {
   private base_url = process.env.STEAMAPI_PROXY_URL + '/users';
@@ -16,7 +19,7 @@ export default new (class UserClient {
       include_appinfo,
       include_played_free_games,
       appids_filter,
-      token: useAuthStore().token,
+      token,
     };
 
     try {
@@ -31,7 +34,7 @@ export default new (class UserClient {
   async getRecentlyPlayed(userId: number): Promise<ISteamAPIResponse> {
     const url = `${this.base_url}/${userId}/recent`;
     const params = {
-      token: useAuthStore().token,
+      token,
     };
 
     try {
@@ -46,7 +49,7 @@ export default new (class UserClient {
   async getFriendsList(userId: number): Promise<ISteamAPIResponse> {
     const url = `${this.base_url}/${userId}/friends`;
     const params = {
-      token: useAuthStore().token,
+      token,
     };
 
     try {
@@ -65,7 +68,7 @@ export default new (class UserClient {
     const url = `${this.base_url}/${userId}/friends`;
     const params = {
       appid,
-      token: useAuthStore().token,
+      token,
     };
 
     try {

@@ -9,14 +9,14 @@ import {
 } from '@nestjs/common';
 import { AuthorizationServer, JwtService } from '@jmondi/oauth2-server';
 import { Request, Response } from 'express';
-import { UserService } from './services/user.service';
-import { UserCredentialsDto } from './lib/types';
-import { User } from './modules/oauth/entities';
+import { UserService } from '../services/user.service';
+import { UserCredentialsDto } from '../lib/types';
+import { User } from '../entities';
 import { hash } from 'bcrypt';
-import { SALT_ROUNDS } from './lib/constants';
-import { InvalidCredentialsException } from './lib/errors';
-import { ClientService } from './services/client.service';
-import { RedisInterceptor } from './modules/redis/redis.interceptor';
+import { SALT_ROUNDS } from '../lib/constants';
+import { InvalidCredentialsException } from '../lib/errors';
+import { ClientService } from '../services/client.service';
+import { RedisInterceptor } from './interceptors/redis.interceptor';
 
 @Controller('login')
 @UseInterceptors(RedisInterceptor)
@@ -57,8 +57,8 @@ export class LoginController {
 
     const updatedUser = User.create({
       ...user,
-      lastLoginAt: new Date(),
-      lastLoginIP: request.ip,
+      lastLoginAt: new Date().getTime() * 1000,
+      // lastLoginIP: request.ip.split(':').pop(),
     });
 
     await this.userService.updateUser(updatedUser);
@@ -93,10 +93,10 @@ export class LoginController {
         email,
         username: email,
         passwordHash: await hash(password, SALT_ROUNDS),
-        createdAt: new Date(),
-        createdIP: request.ip,
-        lastLoginAt: undefined,
-        lastLoginIP: undefined,
+        createdAt: new Date().getTime() * 1000,
+        // createdIP: request.ip.split(':').pop(),
+        lastLoginAt: 0,
+        lastLoginIP: '',
       }),
     );
   }

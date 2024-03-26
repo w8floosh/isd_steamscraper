@@ -1,6 +1,9 @@
 import { api as axios } from 'src/boot/axios';
 import { ISteamAPIResponse } from './types';
 import { useAuthStore } from 'src/stores/auth';
+import { storeToRefs } from 'pinia';
+
+const { APIToken: token } = storeToRefs(useAuthStore());
 
 export default new (class StatsClient {
   private base_url = process.env.STEAMAPI_PROXY_URL + '/compute/players';
@@ -9,7 +12,7 @@ export default new (class StatsClient {
     try {
       const url = `${this.base_url}/${userId}/gamerscore`;
       const params = {
-        token: useAuthStore().token,
+        token,
       };
       const response = await axios.get<ISteamAPIResponse>(url, { params });
       return response.data;
@@ -25,7 +28,7 @@ export default new (class StatsClient {
     try {
       const url = `${this.base_url}/${userId}/favorite`;
       const params = {
-        token: useAuthStore().token,
+        token,
       };
       const response = await axios.get<ISteamAPIResponse>(url, { params });
       return response.data;
@@ -39,7 +42,7 @@ export default new (class StatsClient {
     try {
       const url = `${this.base_url}/${userId}/forgotten`;
       const params = {
-        token: useAuthStore().token,
+        token,
       };
       const response = await axios.get<ISteamAPIResponse>(url, { params });
       return response.data;
