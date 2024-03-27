@@ -23,7 +23,7 @@ const router = useRouter()
 
 
 onMounted(async() => {
-    const tokens = await authorize(authCode.value, clientState.value, window.location.origin);
+    const tokens = await authorize(authCode.value, clientState.value, window.location.href);
     user.value.accessToken = tokens.data.access_token;
     user.value.refreshToken = tokens.data.refresh_token;
     console.log("Redirecting to home...")

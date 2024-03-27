@@ -45,7 +45,7 @@ export class AuthcodeService implements OAuthAuthCodeRepository, OnModuleInit {
     if (!code) {
       return null;
     }
-    console.log('got code starting with:', code.split('.')[0]);
+    console.log('got code starting with:', authcodeCode.split('.')[0]);
     const parsed = JSON.parse(code) as OAuthAuthCode;
     return parsed;
   }
@@ -88,7 +88,7 @@ export class AuthcodeService implements OAuthAuthCodeRepository, OnModuleInit {
     //   authcode.split('.')[0],
     // );
 
-    return code ? new Date() > code.expiresAt : false;
+    return code ? new Date() > code.expiresAt : true;
   }
 
   async revoke(authcode: string): Promise<void> {

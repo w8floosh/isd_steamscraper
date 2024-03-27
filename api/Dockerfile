@@ -1,8 +1,12 @@
 FROM node:18 AS CLIENT_BUILD
 
+COPY package.json /tmp
+RUN cd /tmp && npm install
+RUN mkdir -p /usr/src/app/api && cp -a /tmp/node_modules /usr/src/app/api
 
-COPY . /usr/src/app/api
 WORKDIR /usr/src/app/api
-RUN npm install && npm run build
+
+COPY . .
+RUN npm run build
 
 CMD [ "npm", "run", "start:prod"]

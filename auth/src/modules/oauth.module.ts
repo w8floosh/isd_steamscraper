@@ -35,6 +35,9 @@ const AuthorizationServerFactory: FactoryProvider<AuthorizationServer> = {
       tokenRepository,
       scopeRepository,
       jwtService,
+      {
+        requiresS256: false,
+      },
     );
     server.enableGrantType({
       grant: 'authorization_code',

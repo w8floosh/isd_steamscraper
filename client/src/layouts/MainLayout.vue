@@ -91,7 +91,7 @@ const signIn = async (credentials: UserCredentials) => {
     const routePath = router.resolve(route.fullPath).href
     const absoluteURL = new URL(routePath, window.location.origin).href
     if (dialogMode.value === 'login'){
-      await authenticate(credentials, absoluteURL.concat('oauth/'));
+      await authenticate(credentials, absoluteURL.concat('oauth/redirect'));
       avatarText.value = user.value.name[0];
       router.push(`/oauth/redirect`)
     }

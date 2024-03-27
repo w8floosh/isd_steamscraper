@@ -15,5 +15,5 @@ export type AuthorizeEndpointParsedQs = {
   redirect_uri: string;
   state: string;
   code_challenge: string;
-  code_challenge_method: 'S256';
+  code_challenge_method: 'S256' | 'plain';
 };

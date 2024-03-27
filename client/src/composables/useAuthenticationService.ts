@@ -1,18 +1,16 @@
 import { auth } from 'src/boot/axios';
 import { TokenResponse, UserCredentials } from './types';
 
-function getRandomHexString(chars: number) {
-  const symbols = '0123456789abcdef';
-  let result = '';
-  for (let i = 0; i < chars; i++) {
-    result += symbols[Math.floor(Math.random() * symbols.length)];
-  }
-  return result;
+function getRandomCodeVerifier() {
+  return Array.from(crypto.getRandomValues.bind(crypto)(new Uint8Array(64)))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 export const useAuthenticationService = () => {
   const auth_url = process.env.AUTH_SERVER_URL || auth.defaults.baseURL;
   const login = async (credentials: UserCredentials, redirect_uri: string) => {
+    const state = getRandomCodeVerifier();
     const authCode = await auth.post(auth_url + '/login', credentials, {
       params: {
         response_type: 'code',
@@ -21,9 +19,9 @@ export const useAuthenticationService = () => {
             ? 'steamscraper_client'
             : 'debug',
         redirect_uri,
-        state: getRandomHexString(16),
-        code_challenge: getRandomHexString(64),
-        code_challenge_method: 'S256',
+        state,
+        code_challenge: state,
+        code_challenge_method: 'plain',
       },
       withCredentials: true,
     });
