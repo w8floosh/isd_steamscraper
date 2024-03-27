@@ -1,6 +1,5 @@
 FROM nginx:latest
 
-ARG pwd=w8floosh
 ARG certname=steamscraper
 
 COPY default.conf /etc/nginx/conf.d/default.conf
