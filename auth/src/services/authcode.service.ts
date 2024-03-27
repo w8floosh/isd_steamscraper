@@ -81,12 +81,16 @@ export class AuthcodeService implements OAuthAuthCodeRepository, OnModuleInit {
     }
   }
   async isRevoked(authcode: string): Promise<boolean> {
-    const revoked = !!(await this.redisService.client.hexists(
-      AUTHCODES_KEY,
-      authcode,
-    ));
-    console.log('isRevoked', revoked, authcode.split('.')[0]);
-    return revoked;
+    const code: OAuthAuthCode = JSON.parse(
+      await this.redisService.client.hget(AUTHCODES_KEY, authcode),
+    );
+    // console.log(
+    //   'isRevoked',
+    //   new Date() > code.expiresAt,
+    //   authcode.split('.')[0],
+    // );
+
+    return code ? new Date() > code.expiresAt : false;
   }
 
   async revoke(authcode: string): Promise<void> {
