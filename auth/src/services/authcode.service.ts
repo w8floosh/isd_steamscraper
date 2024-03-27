@@ -81,9 +81,7 @@ export class AuthcodeService implements OAuthAuthCodeRepository, OnModuleInit {
     }
   }
   async isRevoked(authcode: string): Promise<boolean> {
-    const code: OAuthAuthCode = JSON.parse(
-      await this.redisService.client.hget(AUTHCODES_KEY, authcode),
-    );
+    const code: OAuthAuthCode = await this.getByIdentifier(authcode);
     // console.log(
     //   'isRevoked',
     //   new Date() > code.expiresAt,
