@@ -77,6 +77,7 @@ export class OAuthController {
       user: {
         email: request.user.email,
         username: request.user.username,
+        steamWebAPIToken: request.user.steamWebAPIToken,
         lastLoginAt: request.user.lastLoginAt,
         lastLoginIP: request.user.lastLoginIP,
       },

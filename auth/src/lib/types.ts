@@ -1,4 +1,4 @@
-import { IsEmail, MinLength } from 'class-validator';
+import { IsAlphanumeric, IsEmail, MinLength } from 'class-validator';
 
 export class UserCredentialsDto {
   @IsEmail()
@@ -7,6 +7,9 @@ export class UserCredentialsDto {
   // @IsStrongPassword()
   @MinLength(8)
   password: string;
+
+  @IsAlphanumeric()
+  steamWebAPIToken: string;
 }
 
 export type AuthorizeEndpointParsedQs = {

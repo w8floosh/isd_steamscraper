@@ -4,7 +4,7 @@ import { useAuthStore } from 'src/stores/auth';
 import { IAppMetadata } from 'src/components/models';
 import { storeToRefs } from 'pinia';
 
-const { APIToken: token } = storeToRefs(useAuthStore());
+const { steamWebAPIToken: token } = storeToRefs(useAuthStore());
 
 export default new (class AppsClient {
   private endpoint_apps = '/stats/apps';

@@ -3,7 +3,7 @@ import { ISteamAPIResponse } from './types';
 import { useAuthStore } from 'src/stores/auth';
 import { storeToRefs } from 'pinia';
 
-const { APIToken: token } = storeToRefs(useAuthStore());
+const { steamWebAPIToken: token } = storeToRefs(useAuthStore());
 
 export default new (class StatsClient {
   private base_url = process.env.STEAMAPI_PROXY_URL + '/compute/players';

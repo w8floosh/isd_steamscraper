@@ -53,6 +53,7 @@
         @confirm="signIn"
         @update:model-value="credentialsDialogOpened = false"
       />
+      <!-- @todo <ErrorDialog /> -->
     </q-page-container>
   </q-layout>
 </template>
@@ -84,6 +85,8 @@ const props = withDefaults(defineProps<{ auth?: string }>(), {
 const credentialsDialogOpened = ref(props.auth == 'true');
 const dialogMode = ref<'login' | 'register'>('login'); 
 const avatarText = ref('');
+const errorDialogMessage = ref('')
+const errorDialogTitle = computed(() => `${dialogMode.value} failed`.toUpperCase())
 const breadcrumbs = ref<IBreadcrumbs[]>([{name: 'Home', icon: 'home'}])
 
 const signIn = async (credentials: UserCredentials) => {
@@ -95,7 +98,10 @@ const signIn = async (credentials: UserCredentials) => {
       avatarText.value = user.value.name[0];
       router.push(`/oauth/redirect`)
     }
-    else await signup(credentials)
+    else {
+      if (!credentials.steamWebAPIToken) errorDialogMessage.value = 'Steam Web API token was not specified'
+      await signup(credentials)
+    }
   }
 };
 
@@ -136,12 +142,6 @@ const publicDrawerOptions: IDrawerOption[] = [
     icon: 'home',
     endpoint: '/',
   },
-  {
-    title: 'test',
-    icon: 'home',
-    endpoint: '/oauth/redirect',
-  },
-  
 ];
 
 const restrictedDrawerOptions: IDrawerOption[] = [
