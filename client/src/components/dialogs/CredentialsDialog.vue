@@ -3,7 +3,7 @@
     <q-card class="credentials-dialog">
       <q-card-section class="email-input">
         <div class="text-h6">Email</div>
-        <q-input dense v-model="email" type="email" autofocus />
+        <q-input dense v-model="email" type="email" autofocus  />
       </q-card-section>
       <q-card-section class="password-input">
         <div class="text-h6">Password</div>
@@ -13,9 +13,13 @@
         <div class="text-h6">Confirm password</div>
         <q-input :error="!passwordMatch" errorMessage="Passwords do not match" dense v-model="confirmPassword" autofocus type="password" />
       </q-card-section>
+      <q-card-section v-if="dialogMode === 'register'" class="steam-token">
+        <div class="text-h6">Steam Web API token</div>
+        <q-input dense v-model="steamWebAPIToken" autofocus type="password" />
+      </q-card-section>
 
       <q-card-actions align="right" :style="buttonsClass">
-        <q-btn class="text-primary" flat label="Cancel" @click="open = false" />
+        <q-btn :disable="canSend" class="text-primary" flat label="Cancel" @click="open = false" />
         <q-btn class="text-primary" flat :label="dialogMode" @click="emitCredentials" />
       </q-card-actions>
     </q-card>
@@ -33,6 +37,7 @@ const emits = defineEmits<{
 const email = ref('');
 const password = ref('');
 const confirmPassword = ref('')
+const steamWebAPIToken = ref('')
 
 const open = computed({
   get() {
@@ -44,15 +49,21 @@ const open = computed({
 });
 
 const passwordMatch = computed(() => password.value === confirmPassword.value);
-const gridRows = computed(() => props.dialogMode === 'register' ? '1fr 8px 1fr 8px 1fr 8px 64px' : '1fr 8px 1fr 8px 64px')
-const noGridRows = computed(() => props.dialogMode === 'register' ? 7:5);
+const canSend = computed(() => 
+  !!email.value && !!password.value
+  && !!confirmPassword.value 
+  && !!steamWebAPIToken.value 
+  && password.value === confirmPassword.value)
+const gridRows = computed(() => props.dialogMode === 'register' ? '1fr 8px 1fr 8px 1fr 8px 1fr 8px 64px ' : '1fr 8px 1fr 8px 64px')
+const noGridRows = computed(() => props.dialogMode === 'register' ? 9:5);
+
 
 const buttonsClass = ref({
   'grid-row': noGridRows.value,
   'grid-column': 2,
 })
 const emitCredentials = () => {
-  emits('confirm', { email: email.value, password: password.value});
+  emits('confirm', { email: email.value, password: password.value, steamWebAPIToken: steamWebAPIToken.value});
   open.value = false;
 };
 </script>
@@ -77,6 +88,11 @@ const emitCredentials = () => {
 
 .confirm-password-input {
   grid-row: 5;
+  grid-column: span 2;
+}
+
+.steam-token {
+  grid-row: 7;
   grid-column: span 2;
 }
 

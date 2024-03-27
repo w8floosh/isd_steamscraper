@@ -58,7 +58,7 @@ export class LoginController {
     const updatedUser = User.create({
       ...user,
       lastLoginAt: new Date().getTime() * 1000,
-      // lastLoginIP: request.ip.split(':').pop(),
+      lastLoginIP: request.ip.split(':').pop(),
     });
 
     await this.userService.updateUser(updatedUser);
@@ -86,15 +86,16 @@ export class LoginController {
     @Req() request: Request,
     @Body() credentials: UserCredentialsDto,
   ): Promise<void> {
-    const { email, password } = credentials;
+    const { email, password, steamWebAPIToken } = credentials;
     await this.userService.registerUser(
       User.create({
         id: email.concat(await hash(email, SALT_ROUNDS)),
         email,
         username: email,
+        steamWebAPIToken,
         passwordHash: await hash(password, SALT_ROUNDS),
         createdAt: new Date().getTime() * 1000,
-        // createdIP: request.ip.split(':').pop(),
+        createdIP: request.ip.split(':').pop(),
         lastLoginAt: 0,
         lastLoginIP: '',
       }),

@@ -6,6 +6,7 @@ export interface IUserData {
   passwordHash: string;
   lastLoginAt: number;
   lastLoginIP: string;
+  steamWebAPIToken: string;
   createdIP: string;
   createdAt: number;
 }
@@ -20,6 +21,7 @@ export class User implements IUserSummary {
     public username: string,
     public lastLoginAt: number,
     public lastLoginIP: string,
+    public steamWebAPIToken: string,
     public passwordHash?: string,
     public createdIP?: string,
     public createdAt?: number,
@@ -48,6 +50,7 @@ export class User implements IUserSummary {
       data.username,
       data.lastLoginAt,
       data.lastLoginIP,
+      data.steamWebAPIToken,
       extras?.passwordHash,
       extras?.createdIP,
       extras?.createdAt,

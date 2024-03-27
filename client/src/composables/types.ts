@@ -1,6 +1,7 @@
 export type UserCredentials = {
   email: string;
   password: string;
+  steamWebAPIToken?: string;
 };
 
 export type GetAppDataOptions = {
