@@ -1,5 +1,5 @@
 import { GrantIdentifier, OAuthClient } from '@jmondi/oauth2-server/';
-import { Scope } from 'src/modules/oauth/entities';
+import { Scope } from 'src/entities';
 
 export class Client implements OAuthClient {
   private constructor(

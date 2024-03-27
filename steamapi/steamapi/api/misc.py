@@ -2,6 +2,7 @@ import dataclasses
 from quart import Blueprint, request
 from httpx import AsyncClient
 
+from ..broker import broker
 
 from ..broker.types import RedisCacheKeyPattern, RedisCacheTTL
 from ..broker.cache import cached
@@ -12,6 +13,7 @@ news = Blueprint("news", __name__, url_prefix="/news")
 
 
 @news.route("/<id>", methods=["GET"])
+@broker.ping(skip_on_failure=True)
 @cached(RedisCacheKeyPattern.APP_DATA, ["id"], ["news"])
 async def get_app_news(appid, **kwargs):
     injected_client = kwargs.get("session")

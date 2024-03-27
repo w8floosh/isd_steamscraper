@@ -8,7 +8,7 @@ Vagrant.configure("2") do |config|
 
   config.vm.define "vm01" do |vm01|
     vm01.vm.box = "ubuntu/jammy64"
-    vm01.vm.hostname = "vm01"
+    vm01.vm.hostname = "steamscraper.io"
     vm01.vm.network "private_network", ip: "192.168.56.2"
     vm01.vm.provider "virtualbox" do |vb| 
       vb.memory = "2048"

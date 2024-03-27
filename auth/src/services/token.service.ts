@@ -7,17 +7,35 @@ import {
   OAuthUser,
 } from '@jmondi/oauth2-server';
 import { RedisService } from './redis.service';
-import { Injectable, UseInterceptors } from '@nestjs/common';
+import { Injectable, OnModuleInit, UseInterceptors } from '@nestjs/common';
 import { TOKENS_KEY } from 'src/lib/constants';
-import { RedisInterceptor } from 'src/modules/redis/redis.interceptor';
+import { RedisInterceptor } from 'src/controllers/interceptors/redis.interceptor';
 
 @Injectable()
 @UseInterceptors(RedisInterceptor)
-export class TokenService implements OAuthTokenRepository {
+export class TokenService implements OAuthTokenRepository, OnModuleInit {
   constructor(
     private readonly redisService: RedisService,
     private readonly jwtService: JwtService,
   ) {}
+
+  async onModuleInit() {
+    setInterval(async () => {
+      const keys = await this.redisService.client.hkeys(TOKENS_KEY);
+      for (const key of keys) {
+        const token: OAuthToken = JSON.parse(
+          await this.redisService.client.hget(TOKENS_KEY, key),
+        );
+
+        if (
+          new Date(token.accessTokenExpiresAt) < new Date() ||
+          new Date(token.refreshTokenExpiresAt) < new Date()
+        ) {
+          await this.redisService.client.hdel(TOKENS_KEY, key);
+        }
+      }
+    });
+  }
 
   async issueToken(
     client: OAuthClient,
@@ -65,11 +83,11 @@ export class TokenService implements OAuthTokenRepository {
     return token;
   }
 
-  async persist(accessToken: OAuthToken): Promise<void> {
+  async persist(token: OAuthToken): Promise<void> {
     const result = await this.redisService.client.hset(
       TOKENS_KEY,
-      accessToken.refreshToken,
-      JSON.stringify(accessToken),
+      token.accessToken,
+      JSON.stringify(token),
     );
     if (!result) {
       throw new Error('Failed to persist token');

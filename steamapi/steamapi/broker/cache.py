@@ -6,13 +6,12 @@ from typing import List
 
 from quart import request
 
-from api.types import SteamAPIResponse
+from ..api.types import SteamAPIResponse
 from .utils import build_json_path
 from .types import RedisCacheKeyPattern, RedisCacheTTL
 from . import broker
 
 
-@broker.ping(skip_on_failure=True)
 def cached(
     pattern: RedisCacheKeyPattern,
     pattern_args: List = [],

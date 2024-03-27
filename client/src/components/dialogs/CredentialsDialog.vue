@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { UserCredentials } from '../../composables/types';
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
 const props = defineProps<{ modelValue: boolean, dialogMode: 'login' | 'register' }>();
 const emits = defineEmits<{
   (e: 'confirm', credentials: UserCredentials): void;

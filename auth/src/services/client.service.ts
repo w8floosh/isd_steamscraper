@@ -5,11 +5,11 @@ import {
 } from '@jmondi/oauth2-server';
 import { RedisService } from './redis.service';
 import { Injectable, UseInterceptors } from '@nestjs/common';
-import { Client, Scope } from 'src/modules/oauth/entities';
+import { Client, Scope } from 'src/entities';
 import { CLIENTS_KEY, OAUTH_SCOPES, SCOPES_KEY } from 'src/lib/constants';
 import { Request } from 'express';
 import { AuthorizeEndpointParsedQs } from 'src/lib/types';
-import { RedisInterceptor } from 'src/modules/redis/redis.interceptor';
+import { RedisInterceptor } from 'src/controllers/interceptors/redis.interceptor';
 
 @Injectable()
 @UseInterceptors(RedisInterceptor)
@@ -49,9 +49,10 @@ export class ClientService implements OAuthClientRepository {
     client: OAuthClient,
     clientSecret?: string,
   ): Promise<boolean> {
-    return (
-      client.allowedGrants.includes(grantType) && client.secret === clientSecret
-    );
+    return client.allowedGrants.includes(grantType) &&
+      client.secret === clientSecret
+      ? Promise.resolve(true)
+      : Promise.resolve(false);
   }
 
   async register(request: Request): Promise<void> {

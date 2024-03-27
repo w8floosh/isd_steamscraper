@@ -4,10 +4,10 @@ export interface IUserData {
   email: string;
   username: string;
   passwordHash: string;
-  lastLoginAt: Date;
+  lastLoginAt: number;
   lastLoginIP: string;
   createdIP: string;
-  createdAt: Date;
+  createdAt: number;
 }
 
 export type IUserSummary = OAuthUser &
@@ -18,11 +18,11 @@ export class User implements IUserSummary {
     public readonly id: OAuthUserIdentifier,
     public readonly email: string,
     public username: string,
-    public lastLoginAt: Date,
+    public lastLoginAt: number,
     public lastLoginIP: string,
     public passwordHash?: string,
     public createdIP?: string,
-    public createdAt?: Date,
+    public createdAt?: number,
   ) {}
 
   static fromJSON(serialized: string, mode: 'full' | 'summary' = 'full') {
@@ -46,7 +46,7 @@ export class User implements IUserSummary {
       data.id,
       data.email,
       data.username,
-      data.lastLoginAt ? new Date(data.lastLoginAt) : undefined,
+      data.lastLoginAt,
       data.lastLoginIP,
       extras?.passwordHash,
       extras?.createdIP,

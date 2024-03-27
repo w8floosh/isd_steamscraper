@@ -5,7 +5,7 @@ import {
   OAuthUserRepository,
 } from '@jmondi/oauth2-server';
 import { RedisService } from './redis.service';
-import { User } from 'src/modules/oauth/entities';
+import { User } from 'src/entities';
 import {
   InvalidCredentialsException,
   PersistenceException,
@@ -13,7 +13,7 @@ import {
 import { compare } from 'bcrypt';
 import { Injectable, Logger, UseInterceptors } from '@nestjs/common';
 import { USERS_KEY } from 'src/lib/constants';
-import { RedisInterceptor } from 'src/modules/redis/redis.interceptor';
+import { RedisInterceptor } from 'src/controllers/interceptors/redis.interceptor';
 
 @Injectable()
 @UseInterceptors(RedisInterceptor)

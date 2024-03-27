@@ -1,0 +1,12 @@
+node_modules
+dist
+.env.local
+test
+.quasar
+.vscode
+.git*
+README.md
+Dockerfile
+.dockerignore
+.gitignore
+.editorconfig

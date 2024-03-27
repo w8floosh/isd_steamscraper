@@ -1,12 +1,12 @@
-FROM python:latest
+FROM node:18 AS CLIENT_BUILD
 
-RUN pip install -U celery[redis] redis && mkdir -p /usr/src/app/ && adduser celery -u 3001
+COPY package.json /tmp
+RUN cd /tmp && npm install
+RUN mkdir -p /usr/src/app/api && cp -a /tmp/node_modules /usr/src/app/api
 
-COPY ./api /usr/src/app/
+WORKDIR /usr/src/app/api
 
-EXPOSE 3001
+COPY . .
+RUN npm run build
 
-WORKDIR /usr/src/app
-
-ENTRYPOINT [ "python3" ]
-CMD ["-m", "celery", "-A", "api", "worker", "--loglevel=info", "--uid=3001"]
+CMD [ "npm", "run", "start:prod"]

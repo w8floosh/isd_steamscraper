@@ -15,11 +15,13 @@ declare module '@vue/runtime-core' {
 // "export default () => {}" function below (which runs individually
 // for each client)
 const api = axios.create({
-  baseURL: process.env.STEAMAPI_PROXY_URL || 'https://localhost:3000/',
+  baseURL: process.env.STEAMAPI_PROXY_URL,
 });
 
 const auth = axios.create({
-  baseURL: process.env.AUTH_SERVER_URL || 'https://localhost:4000/',
+  baseURL: process.env.AUTH_SERVER_URL,
+
+  // baseURL: process.env.AUTH_SERVER_URL || 'https://localhost:4000/',
 });
 
 export default boot(({ app }) => {
