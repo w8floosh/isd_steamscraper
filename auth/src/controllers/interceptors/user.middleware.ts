@@ -3,6 +3,7 @@ import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { JWTDecodeException, MalformedJIDException } from 'src/lib/errors';
 import { User } from '../../entities';
+import { IUserData } from 'src/entities/user';
 
 @Injectable()
 export class UserMiddleware implements NestMiddleware {
@@ -17,12 +18,13 @@ export class UserMiddleware implements NestMiddleware {
 
     try {
       const decoded = await this.jwtService.verify(jid);
-      user = decoded?.user as User;
+      console.log(decoded.user);
+      user = User.create(decoded.user as IUserData, 'summary');
+      console.log(user);
     } catch (e) {
-      this.logger.error(e.message);
+      this.logger.error(e.message + ' for user ' + user.email);
       throw new JWTDecodeException(e.message);
     }
-
     if (!user) {
       this.logger.error('Malformed JID');
       throw new MalformedJIDException('user');

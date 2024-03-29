@@ -56,7 +56,11 @@ export class AuthcodeService implements OAuthAuthCodeRepository, OnModuleInit {
     scopes: OAuthScope[],
   ): Promise<OAuthAuthCode> {
     const expiresAt = new Date(Date.now() + 1000 * 60 * 10);
-    const code = await this.jwtService.sign({ client, user, scopes });
+    const code = await this.jwtService.sign({
+      client: client.id,
+      user: user.id,
+      scopes: scopes.map((s) => s.id),
+    });
     const authCode: OAuthAuthCode = {
       client,
       user,
@@ -82,11 +86,6 @@ export class AuthcodeService implements OAuthAuthCodeRepository, OnModuleInit {
   }
   async isRevoked(authcode: string): Promise<boolean> {
     const code: OAuthAuthCode = await this.getByIdentifier(authcode);
-    // console.log(
-    //   'isRevoked',
-    //   new Date() > code.expiresAt,
-    //   authcode.split('.')[0],
-    // );
 
     return code ? new Date() > code.expiresAt : true;
   }

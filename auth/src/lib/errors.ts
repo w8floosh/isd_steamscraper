@@ -1,5 +1,7 @@
 import {
+  ForbiddenException,
   InternalServerErrorException,
+  NotAcceptableException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -62,5 +64,17 @@ export class ScopeNotFoundException extends NotFoundException {
 export class AuthcodeNotFoundException extends NotFoundException {
   constructor() {
     super(`Authcode not found`);
+  }
+}
+
+export class InvalidSessionTokenException extends ForbiddenException {
+  constructor(ip: string) {
+    super(`Session token verification failed for ${ip}`);
+  }
+}
+
+export class ExpiredTokenException extends UnauthorizedException {
+  constructor(type: string) {
+    super(`Supplied ${type} token is expired`);
   }
 }

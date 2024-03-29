@@ -14,7 +14,7 @@ import { TokenService } from '../services/token.service';
 import { ScopeService } from 'src/services/scope.service';
 import { UserService } from 'src/services/user.service';
 import { OAuthController } from '../controllers/oauth.controller';
-import { UserMiddleware } from '../controllers/interceptors/user.interceptor';
+import { UserMiddleware } from '../controllers/interceptors/user.middleware';
 import { RedisModule } from './redis.module';
 import { LoginController } from 'src/controllers/login.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -88,6 +88,7 @@ export class OAuthModule implements NestModule {
       .forRoutes(
         { path: 'oauth/token', method: RequestMethod.POST },
         { path: 'oauth/authorize', method: RequestMethod.GET },
+        { path: 'login/verify', method: RequestMethod.GET },
       );
   }
 }

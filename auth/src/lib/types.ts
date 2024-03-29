@@ -1,4 +1,5 @@
 import { IsAlphanumeric, IsEmail, MinLength } from 'class-validator';
+import { User } from 'src/entities';
 
 export class UserCredentialsDto {
   @IsEmail()
@@ -19,4 +20,25 @@ export type AuthorizeEndpointParsedQs = {
   state: string;
   code_challenge: string;
   code_challenge_method: 'S256' | 'plain';
+};
+
+export type SessionCookie = {
+  tokenData: SessionToken;
+  user: string;
+  iat: number;
+  exp: number;
+};
+
+export type SessionToken = {
+  token_type: 'Bearer';
+  expires_in: number;
+  access_token: string;
+  refresh_token: string;
+  scope: string;
+};
+
+export type SessionVerificationResponse = {
+  user: User;
+  token: string | SessionToken;
+  refresh: boolean;
 };

@@ -7,49 +7,34 @@ import {
   OAuthUser,
 } from '@jmondi/oauth2-server';
 import { RedisService } from './redis.service';
-import { Injectable, OnModuleInit, UseInterceptors } from '@nestjs/common';
+import { Injectable, UseInterceptors } from '@nestjs/common';
 import { TOKENS_KEY } from 'src/lib/constants';
 import { RedisInterceptor } from 'src/controllers/interceptors/redis.interceptor';
 
 @Injectable()
 @UseInterceptors(RedisInterceptor)
-export class TokenService implements OAuthTokenRepository, OnModuleInit {
+export class TokenService implements OAuthTokenRepository {
   constructor(
     private readonly redisService: RedisService,
     private readonly jwtService: JwtService,
   ) {}
-
-  async onModuleInit() {
-    setInterval(async () => {
-      const keys = await this.redisService.client.hkeys(TOKENS_KEY);
-      for (const key of keys) {
-        const token: OAuthToken = JSON.parse(
-          await this.redisService.client.hget(TOKENS_KEY, key),
-        );
-
-        if (
-          new Date(token.accessTokenExpiresAt) < new Date() ||
-          new Date(token.refreshTokenExpiresAt) < new Date()
-        ) {
-          await this.redisService.client.hdel(TOKENS_KEY, key);
-        }
-      }
-    });
-  }
 
   async issueToken(
     client: OAuthClient,
     scopes: OAuthScope[],
     user?: OAuthUser,
   ): Promise<OAuthToken> {
-    const token: OAuthToken = {
-      accessToken: await this.jwtService.sign({ client, scopes, user }),
-      accessTokenExpiresAt: new Date(Date.now() + 3600 * 1000),
+    return {
+      accessToken: await this.jwtService.sign({
+        client: client.id,
+        scopes: scopes.map((s) => s.id),
+        user: user.id,
+      }),
+      accessTokenExpiresAt: new Date(Date.now() + 20 * 1000), // @todo CHANGE THIS TO 3600
       client,
       scopes,
       user,
     };
-    return token;
   }
 
   async getByRefreshToken(refreshTokenToken: string): Promise<OAuthToken> {
@@ -60,25 +45,23 @@ export class TokenService implements OAuthTokenRepository, OnModuleInit {
     return token ? JSON.parse(token) : null;
   }
 
-  async isRefreshTokenRevoked(refreshToken: OAuthToken): Promise<boolean> {
-    return !!(await this.redisService.client.hexists(
-      TOKENS_KEY,
-      refreshToken.client.id,
-    ));
+  async isRefreshTokenRevoked(token: OAuthToken): Promise<boolean> {
+    const storedToken = await this.getByRefreshToken(token.refreshToken);
+    return storedToken ? new Date() > storedToken.refreshTokenExpiresAt : true;
   }
 
   async issueRefreshToken(
     accessToken: OAuthToken,
     client: OAuthClient,
   ): Promise<OAuthToken> {
-    const token: OAuthToken = {
+    const token = {
+      client: client.id,
       ...accessToken,
       refreshToken: await this.jwtService.sign({
-        accessToken,
-        client,
-        time: Date.now(),
+        accessToken: accessToken.accessToken,
+        iat: Date.now(),
       }),
-      refreshTokenExpiresAt: new Date(Date.now() + 3600 * 1000),
+      refreshTokenExpiresAt: new Date(Date.now() + 60 * 60 * 24 * 1000),
     };
     return token;
   }
@@ -93,13 +76,25 @@ export class TokenService implements OAuthTokenRepository, OnModuleInit {
       throw new Error('Failed to persist token');
     }
   }
-  async revoke(accessToken: OAuthToken): Promise<void> {
-    const result = await this.redisService.client.hdel(
+  async revoke(token: OAuthToken): Promise<void> {
+    const persistedToken = await this.getByRefreshToken(token.refreshToken);
+
+    if (!persistedToken) {
+      throw new Error('Failed to revoke token: not found');
+    }
+
+    const revokedToken: OAuthToken = { ...persistedToken };
+    revokedToken.accessTokenExpiresAt = new Date(0);
+    revokedToken.refreshTokenExpiresAt = new Date(0);
+
+    const revoked = await this.redisService.client.hset(
       TOKENS_KEY,
-      accessToken.client.id,
+      token.accessToken,
+      JSON.stringify(revokedToken),
     );
-    if (!result) {
-      throw new Error('Failed to revoke token');
+
+    if (!revoked) {
+      throw new Error('Failed to revoke token: could not persist changes');
     }
   }
 }
