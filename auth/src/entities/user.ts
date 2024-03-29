@@ -1,20 +1,17 @@
 import { OAuthUser, OAuthUserIdentifier } from '@jmondi/oauth2-server/';
 
-export interface IUserData {
+export interface IUserData extends OAuthUser {
   email: string;
   username: string;
-  passwordHash: string;
   lastLoginAt: number;
   lastLoginIP: string;
   steamWebAPIToken: string;
-  createdIP: string;
-  createdAt: number;
+  passwordHash?: string;
+  createdIP?: string;
+  createdAt?: number;
 }
 
-export type IUserSummary = OAuthUser &
-  Omit<IUserData, 'passwordHash' | 'createdIP' | 'createdAt'>;
-
-export class User implements IUserSummary {
+export class User implements IUserData {
   private constructor(
     public readonly id: OAuthUserIdentifier,
     public readonly email: string,
@@ -30,12 +27,8 @@ export class User implements IUserSummary {
   static fromJSON(serialized: string, mode: 'full' | 'summary' = 'full') {
     return this.create(JSON.parse(serialized), mode);
   }
-  static create(
-    data: IUserSummary | (IUserData & OAuthUser),
-    mode: 'full' | 'summary' = 'full',
-  ) {
-    if (!data.id || !data.email || (!data.passwordHash && mode === 'full'))
-      return undefined;
+  static create(data: OAuthUser, mode: 'full' | 'summary' = 'full') {
+    if (!data.passwordHash && mode === 'full') return undefined;
     let extras: Partial<IUserData>;
     if (mode === 'full') {
       extras = {

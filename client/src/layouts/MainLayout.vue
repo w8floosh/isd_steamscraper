@@ -12,17 +12,18 @@
         />
 
         <q-toolbar-title> SteamScraper </q-toolbar-title>
-        
-        
           <q-chip
             v-if="authenticated"
             style="background-color: transparent"
             dark
           >
-            <q-avatar dense color="black">{{
-              user.name[0].toUpperCase()
-            }}</q-avatar>
+          
+            <q-avatar dense color="black">
+              {{ user.name[0].toUpperCase() }}
+            </q-avatar>
             {{ user.name }}
+            <q-btn label="logout" @click="signout" />
+
           </q-chip>
           <q-btn-group  v-else>
             <q-btn label="login" @click="switchLoginDialog" />
@@ -59,21 +60,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useAuthStore } from 'stores/auth';
 import DrawerOption from 'components/items/DrawerOption.vue';
 import CredentialsDialog from 'components/dialogs/CredentialsDialog.vue';
 import { UserCredentials } from 'src/composables/types';
 import { storeToRefs } from 'pinia';
-import { IBreadcrumbs, IDrawerOption } from 'src/components/models';
+import { IBreadcrumbs } from 'src/components/models';
+import { useDrawerOptions } from 'src/composables/useDrawerOptions'
 import { RouteLocation, onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 
 onBeforeRouteLeave((to) => {
   addBreadcrumbs(to)
 })
 
-const { authenticate, signup } = useAuthStore();
+const { authenticate, resumeSession, signup, signout } = useAuthStore();
 const { user, authenticated, loading } = storeToRefs(useAuthStore());
+
+const { publicOptions, restrictedOptions } = useDrawerOptions()
+
 const route = useRoute();
 const router = useRouter();
 
@@ -86,7 +91,7 @@ const credentialsDialogOpened = ref(props.auth == 'true');
 const dialogMode = ref<'login' | 'register'>('login'); 
 const avatarText = ref('');
 const errorDialogMessage = ref('')
-const errorDialogTitle = computed(() => `${dialogMode.value} failed`.toUpperCase())
+// const errorDialogTitle = computed(() => `${dialogMode.value} failed`.toUpperCase())
 const breadcrumbs = ref<IBreadcrumbs[]>([{name: 'Home', icon: 'home'}])
 
 const signIn = async (credentials: UserCredentials) => {
@@ -96,7 +101,7 @@ const signIn = async (credentials: UserCredentials) => {
     if (dialogMode.value === 'login'){
       await authenticate(credentials, absoluteURL.concat('oauth/redirect'));
       avatarText.value = user.value.name[0];
-      router.push(`/oauth/redirect`)
+      router.push('/oauth/redirect')
     }
     else {
       if (!credentials.steamWebAPIToken) errorDialogMessage.value = 'Steam Web API token was not specified'
@@ -136,46 +141,22 @@ const switchRegisterDialog = () => {
   dialogMode.value = 'register';
 }
 
-const publicDrawerOptions: IDrawerOption[] = [
-  {
-    title: 'Homepage',
-    icon: 'home',
-    endpoint: '/',
-  },
-];
+onMounted(async() => {
+  try {
+    await resumeSession()
+  }
+  catch {
+    console.log('No session found')
+    switchLoginDialog()
+  }
+})
 
-const restrictedDrawerOptions: IDrawerOption[] = [
-  {
-    title: 'Stats',
-    caption: 'See your personal stats',
-    icon: 'query_stats',
-    endpoint: '/me',
-  },
-  {
-    title: 'App data',
-    caption: 'Get all details and news about a game/app',
-    icon: 'sports_esports',
-    endpoint: '/apps',
-  },
-  {
-    title: 'Friends',
-    caption: 'Show your friend list',
-    icon: 'group',
-    endpoint: '/friends',
-  },
-  {
-    title: 'Leaderboards',
-    caption: 'Who is the best among you and your friends?',
-    icon: 'leaderboard',
-    endpoint: '/leaderboards',
-  },
-];
 const leftDrawerOpen = ref(false);
 
 const links = computed(() =>
   authenticated.value
-    ? publicDrawerOptions.concat(...restrictedDrawerOptions)
-    : publicDrawerOptions
+    ? publicOptions.concat(...restrictedOptions)
+    : publicOptions
 );
 
 function toggleLeftDrawer() {

@@ -1,17 +1,25 @@
 import { auth } from 'src/boot/axios';
-import { TokenResponse, UserCredentials } from './types';
+import {
+  AuthenticationError,
+  SessionCookieVerifierResponse,
+  SessionResponse,
+  TokenResponse,
+  UserCredentials,
+} from './types';
+import { ref } from 'vue';
 
 function getRandomCodeVerifier() {
-  return Array.from(crypto.getRandomValues.bind(crypto)(new Uint8Array(64)))
+  return Array.from(crypto.getRandomValues.bind(crypto)(new Uint8Array(24)))
     .map((byte) => byte.toString(16).padStart(2, '0'))
     .join('');
 }
 
 export const useAuthenticationService = () => {
   const auth_url = process.env.AUTH_SERVER_URL || auth.defaults.baseURL;
+  const authenticationError = ref<AuthenticationError | null>(null);
   const login = async (credentials: UserCredentials, redirect_uri: string) => {
     const state = getRandomCodeVerifier();
-    const authCode = await auth.post(auth_url + '/login', credentials, {
+    const authCode = await auth.post(auth_url + '/auth/login', credentials, {
       params: {
         response_type: 'code',
         client_id:
@@ -32,8 +40,59 @@ export const useAuthenticationService = () => {
     };
   };
 
+  const logout = async () => {
+    await auth.post(auth_url + '/auth/logout', null, {
+      withCredentials: true,
+    });
+  };
+
+  const resume = async (): Promise<SessionResponse | null> => {
+    const session = await auth.get<SessionCookieVerifierResponse>(
+      auth_url + '/auth/verify',
+      {
+        withCredentials: true,
+      }
+    );
+    const { refresh, ...sessionData } = session.data;
+    switch (session.status) {
+      case 200:
+        if (!refresh)
+          return {
+            user: session.data.user,
+            token: session.data.token,
+          };
+
+        const refreshedTokens = await auth.post<TokenResponse>(
+          auth_url + '/oauth/token',
+          {
+            grant_type: 'refresh_token',
+            refresh_token: sessionData.token,
+            client_id:
+              process.env.NODE_ENV === 'production'
+                ? 'steamscraper_client'
+                : 'debug',
+          },
+          { withCredentials: true }
+        );
+
+        return {
+          user: session.data.user,
+          token: refreshedTokens.data.access_token,
+        };
+      case 401: // unauthorized
+        authenticationError.value = AuthenticationError.EXPIRED_SESSION;
+        return null;
+      case 403: // forbidden
+        authenticationError.value = AuthenticationError.INVALID_SESSION;
+        return null;
+      default:
+        authenticationError.value = AuthenticationError.GENERIC;
+        return null;
+    }
+  };
+
   const register = async (credentials: UserCredentials) => {
-    return await auth.post(auth_url + '/login/signup', credentials);
+    return await auth.post(auth_url + '/auth/signup', credentials);
   };
 
   const issueTokens = async (
@@ -41,14 +100,20 @@ export const useAuthenticationService = () => {
     clientState: string,
     redirect_uri: string
   ) => {
-    return await auth.post<TokenResponse>(auth_url + '/oauth/token', {
-      grant_type: 'authorization_code',
-      code: authCode,
-      redirect_uri,
-      client_id:
-        process.env.NODE_ENV === 'production' ? 'steamscraper_client' : 'debug',
-      code_verifier: clientState,
-    });
+    return await auth.post<TokenResponse>(
+      auth_url + '/oauth/token',
+      {
+        grant_type: 'authorization_code',
+        code: authCode,
+        redirect_uri,
+        client_id:
+          process.env.NODE_ENV === 'production'
+            ? 'steamscraper_client'
+            : 'debug',
+        code_verifier: clientState,
+      },
+      { withCredentials: true }
+    );
   };
 
   //   token_type will always be Bearer
@@ -57,7 +122,7 @@ export const useAuthenticationService = () => {
   // refresh_token is a JWT signed token and can be used in with the refresh grant
   // scope is a space delimited list of scopes the token has access to
 
-  return { login, register, issueTokens };
+  return { login, logout, resume, register, issueTokens };
 };
 
 // response_type must be set to code

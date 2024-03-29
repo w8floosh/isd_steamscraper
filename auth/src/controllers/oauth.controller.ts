@@ -1,5 +1,4 @@
 import {
-  Body,
   Controller,
   Get,
   Inject,
@@ -8,10 +7,10 @@ import {
   Res,
   UseInterceptors,
 } from '@nestjs/common';
-import { AuthorizationServer } from '@jmondi/oauth2-server';
+import { AuthorizationServer, JwtService } from '@jmondi/oauth2-server';
 import { requestFromExpress } from '@jmondi/oauth2-server/express';
 import { Request, Response } from 'express';
-import { UserMiddleware } from './interceptors/user.interceptor';
+import { UserMiddleware } from './interceptors/user.middleware';
 import { User } from '../entities';
 import { ClientService } from 'src/services/client.service';
 
@@ -21,25 +20,41 @@ export class OAuthController {
     @Inject('AUTH_SERVER')
     private readonly authorizationServer: AuthorizationServer,
     private readonly clientService: ClientService,
+    private readonly jwtService: JwtService,
   ) {}
 
   @Post('token')
   async getToken(
-    @Req() request: Request,
+    @Req() request: Request & { user: User },
     @Res({ passthrough: true }) response: Response,
-    @Body() body: Record<string, any>,
-  ): Promise<Record<string, any>> {
-    console.log(
-      // JSON.parse(
-      //   Buffer.from(body['code'].split(':')[1], 'base64').toString('utf-8'),
-      // ),
-      body,
-    );
+  ) {
     const tokenResponse =
       await this.authorizationServer.respondToAccessTokenRequest(
         requestFromExpress(request),
       );
     response.status(tokenResponse.status);
+
+    const { scopes, ...tokenData } = tokenResponse.body;
+    const sessionExpiry = Math.floor(
+      (Date.now() + 15 * 24 * 60 * 60 * 1000) / 1000,
+    );
+    const sessionCookie = await this.jwtService.sign({
+      tokenData,
+      user: request.user?.id,
+      iat: Math.floor(Date.now() / 1000),
+      exp: sessionExpiry, // 15 days
+    });
+    response.clearCookie('jid');
+    response.cookie('session', sessionCookie, {
+      secure: true,
+      httpOnly: true,
+      sameSite: 'none',
+      encode: String,
+    });
+    console.log(
+      response.getHeader('Set-Cookie').toString().length,
+      sessionCookie.length,
+    );
     return tokenResponse.body;
   }
 

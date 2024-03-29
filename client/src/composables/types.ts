@@ -1,3 +1,11 @@
+export interface IUser {
+  email: string;
+  username: string;
+  lastLoginAt: number;
+  lastLoginIP: string;
+  steamWebAPIToken: string;
+}
+
 export type UserCredentials = {
   email: string;
   password: string;
@@ -23,3 +31,20 @@ export type TokenResponse = {
   refresh_token: string;
   scope: string;
 };
+
+export type SessionResponse = {
+  user: IUser;
+  token: string;
+};
+
+export type SessionCookieVerifierResponse = {
+  user: IUser;
+  token: string;
+  refresh: boolean;
+};
+
+export enum AuthenticationError {
+  INVALID_SESSION = 'Invalid or missing session token',
+  EXPIRED_SESSION = 'Session expired',
+  GENERIC = 'Generic error',
+}

@@ -7,9 +7,8 @@ import {
 } from '@jmondi/oauth2-server';
 import { RedisService } from './redis.service';
 import { RedisException, ScopeNotFoundException } from 'src/lib/errors';
-import { Scope } from 'src/entities';
 import { Injectable, OnModuleInit, UseInterceptors } from '@nestjs/common';
-import { SCOPES_KEY } from 'src/lib/constants';
+import { OAUTH_SCOPES, SCOPES_KEY } from 'src/lib/constants';
 import { RedisInterceptor } from 'src/controllers/interceptors/redis.interceptor';
 
 @Injectable()
@@ -19,11 +18,13 @@ export class ScopeService implements OAuthScopeRepository, OnModuleInit {
 
   async onModuleInit() {
     try {
-      await this.redisService.client.hsetnx(
-        SCOPES_KEY,
-        'all',
-        JSON.stringify(Scope.create({ id: 'all', name: 'all' })),
-      );
+      for (const [id, data] of OAUTH_SCOPES) {
+        await this.redisService.client.hsetnx(
+          SCOPES_KEY,
+          id,
+          JSON.stringify(data),
+        );
+      }
     } catch (e) {
       throw new RedisException(
         `Encountered ${e.message} when initializing OAuth2 scopes`,
@@ -39,7 +40,7 @@ export class ScopeService implements OAuthScopeRepository, OnModuleInit {
     if (!scopes.length) {
       throw new ScopeNotFoundException(...scopeNames);
     }
-    return scopes.map((scope) => Scope.fromJSON(scope));
+    return scopes.map((scope) => JSON.parse(scope));
   }
 
   async finalize(
