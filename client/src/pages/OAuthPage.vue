@@ -26,7 +26,6 @@ onMounted(async() => {
     const tokens = await authorize(authCode.value, clientState.value, window.location.href);
     clientState.value = '';
     authCode.value = '';
-    console.log(tokens.data.access_token)
     user.value.accessToken = tokens.data.access_token;
     router.push('/')
 })

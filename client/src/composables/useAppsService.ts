@@ -2,11 +2,12 @@ import { ref } from 'vue';
 import appsClient from '../clients/AppsClient';
 import { IAppData, IAppMetadata } from 'src/components/models';
 import { GetAppDataOptions } from './types';
+import { AppListResponse } from 'src/clients/responses';
 
 export const useAppsService = () => {
   const loading = ref(false);
 
-  async function getAppList(): Promise<Record<string, IAppMetadata>> {
+  async function getAppList(): Promise<AppListResponse> {
     try {
       loading.value = true;
 
@@ -42,12 +43,10 @@ export const useAppsService = () => {
       ]);
 
       // Extract relevant data
-      const details = detailsResponse.data;
+      const details = detailsResponse.data[meta.id.toString()];
       const news = Object.values(newsResponse.data);
-      const players = Object.values(playersResponse.data)[0] as number;
-      const achievements = Object.values(
-        achievementsResponse.data
-      )[0] as number;
+      const players = Object.values(playersResponse.data)[0];
+      const achievements = Object.values(achievementsResponse.data)[0];
 
       return {
         meta,

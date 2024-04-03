@@ -1,4 +1,10 @@
-import { ISteamAPIResponse } from 'src/clients/types';
+import {
+  FriendListResponse,
+  OwnedGamesResponse,
+  PlayerAchievementsResponse,
+  PlayerSummaryResponse,
+  RecentlyPlayedResponse,
+} from 'src/clients/responses';
 import { ref } from 'vue';
 import userClient from 'src/clients/UserClient';
 
@@ -10,7 +16,7 @@ export const useUserService = () => {
     include_appinfo?: boolean,
     include_played_free_games?: boolean,
     appids_filter?: string
-  ) {
+  ): Promise<OwnedGamesResponse> {
     loading.value = true;
     try {
       const response = await userClient.getOwnedGames(
@@ -28,7 +34,9 @@ export const useUserService = () => {
     }
   }
 
-  async function getRecentlyPlayed(userId: number) {
+  async function getRecentlyPlayed(
+    userId: number
+  ): Promise<RecentlyPlayedResponse> {
     loading.value = true;
     try {
       const response = await userClient.getRecentlyPlayed(userId);
@@ -41,7 +49,22 @@ export const useUserService = () => {
     }
   }
 
-  async function getFriendsList(userId: number) {
+  async function getPlayerSummary(
+    userId: number
+  ): Promise<PlayerSummaryResponse> {
+    loading.value = true;
+    try {
+      const response = await userClient.getPlayerSummary(userId);
+      return response.data;
+    } catch (error) {
+      console.error('Error retrieving friends list:', error);
+      throw error;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function getFriendsList(userId: number): Promise<FriendListResponse> {
     loading.value = true;
     try {
       const response = await userClient.getFriendsList(userId);
@@ -54,7 +77,10 @@ export const useUserService = () => {
     }
   }
 
-  async function getPlayerAchievements(userId: number, appid: number) {
+  async function getPlayerAchievements(
+    userId: number,
+    appid: number
+  ): Promise<PlayerAchievementsResponse> {
     loading.value = true;
     try {
       const response = await userClient.getPlayerAchievements(userId, appid);
@@ -69,6 +95,7 @@ export const useUserService = () => {
 
   return {
     getOwnedGames,
+    getPlayerSummary,
     getFriendsList,
     getPlayerAchievements,
     getRecentlyPlayed,

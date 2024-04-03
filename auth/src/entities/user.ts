@@ -6,6 +6,7 @@ export interface IUserData extends OAuthUser {
   lastLoginAt: number;
   lastLoginIP: string;
   steamWebAPIToken: string;
+  steamId: string;
   passwordHash?: string;
   createdIP?: string;
   createdAt?: number;
@@ -19,6 +20,7 @@ export class User implements IUserData {
     public lastLoginAt: number,
     public lastLoginIP: string,
     public steamWebAPIToken: string,
+    public steamId: string,
     public passwordHash?: string,
     public createdIP?: string,
     public createdAt?: number,
@@ -44,6 +46,7 @@ export class User implements IUserData {
       data.lastLoginAt,
       data.lastLoginIP,
       data.steamWebAPIToken,
+      data.steamId,
       extras?.passwordHash,
       extras?.createdIP,
       extras?.createdAt,

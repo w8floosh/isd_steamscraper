@@ -8,6 +8,7 @@ const NOT_LOGGED = {
   email: '',
   accessToken: '',
   steamWebAPIToken: '',
+  steamId: -1,
 };
 const { login, logout, resume, register, issueTokens } =
   useAuthenticationService();
@@ -21,6 +22,7 @@ export const useAuthStore = defineStore('auth', () => {
   const authenticated = computed(() => !!user.value.accessToken);
   const accessToken = computed(() => user.value.accessToken);
   const steamWebAPIToken = computed(() => user.value.steamWebAPIToken);
+  const steamId = computed(() => user.value.steamId);
 
   async function authenticate(
     credentials: UserCredentials,
@@ -33,6 +35,7 @@ export const useAuthStore = defineStore('auth', () => {
       name: loginResponse.user.username,
       email: loginResponse.user.email,
       steamWebAPIToken: loginResponse.user.steamWebAPIToken,
+      steamId: loginResponse.user.steamId,
     };
     loading.value = false;
     clientState.value = loginResponse.clientState;
@@ -50,6 +53,7 @@ export const useAuthStore = defineStore('auth', () => {
       name: session.user.username,
       email: session.user.email,
       steamWebAPIToken: session.user.steamWebAPIToken,
+      steamId: session.user.steamId,
       accessToken: session.token,
     };
   }
@@ -81,6 +85,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     accessToken,
     steamWebAPIToken,
+    steamId,
     authenticate,
     resumeSession,
     signup,

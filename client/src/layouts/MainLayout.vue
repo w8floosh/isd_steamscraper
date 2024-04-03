@@ -22,7 +22,7 @@
               {{ user.name[0].toUpperCase() }}
             </q-avatar>
             {{ user.name }}
-            <q-btn label="logout" @click="signout" />
+            <q-btn label="logout" @click="signOut" />
 
           </q-chip>
           <q-btn-group  v-else>
@@ -51,10 +51,17 @@
         v-if="credentialsDialogOpened"
         v-model="credentialsDialogOpened"
         :dialogMode="dialogMode"
-        @confirm="signIn"
+        @confirm="sendCredentials"
         @update:model-value="credentialsDialogOpened = false"
       />
       <!-- @todo <ErrorDialog /> -->
+      <MessagePopup 
+        v-if='messagePopupOpened' 
+        :modelValue="messagePopupOpened" 
+        :title="messagePopupTitle" 
+        :message="messagePopupContent"
+        @confirm="messagePopupOpened = false"
+      />
     </q-page-container>
   </q-layout>
 </template>
@@ -64,6 +71,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useAuthStore } from 'stores/auth';
 import DrawerOption from 'components/items/DrawerOption.vue';
 import CredentialsDialog from 'components/dialogs/CredentialsDialog.vue';
+import MessagePopup from 'src/components/dialogs/MessagePopup.vue';
 import { UserCredentials } from 'src/composables/types';
 import { storeToRefs } from 'pinia';
 import { IBreadcrumbs } from 'src/components/models';
@@ -88,27 +96,43 @@ const props = withDefaults(defineProps<{ auth?: string }>(), {
 });
 
 const credentialsDialogOpened = ref(props.auth == 'true');
+const messagePopupOpened = ref(false);
 const dialogMode = ref<'login' | 'register'>('login'); 
 const avatarText = ref('');
 const errorDialogMessage = ref('')
-// const errorDialogTitle = computed(() => `${dialogMode.value} failed`.toUpperCase())
+const messagePopupTitle = ref('')
+const messagePopupContent = ref('')
 const breadcrumbs = ref<IBreadcrumbs[]>([{name: 'Home', icon: 'home'}])
+
+
+const sendCredentials = async (credentials: UserCredentials) => {
+  return dialogMode.value === 'login' ? signIn(credentials) : signUp(credentials)
+}
 
 const signIn = async (credentials: UserCredentials) => {
   if (!loading.value) {
     const routePath = router.resolve(route.fullPath).href
     const absoluteURL = new URL(routePath, window.location.origin).href
-    if (dialogMode.value === 'login'){
-      await authenticate(credentials, absoluteURL.concat('oauth/redirect'));
-      avatarText.value = user.value.name[0];
-      router.push('/oauth/redirect')
-    }
-    else {
-      if (!credentials.steamWebAPIToken) errorDialogMessage.value = 'Steam Web API token was not specified'
-      await signup(credentials)
-    }
+    await authenticate(credentials, absoluteURL.concat('oauth/redirect'));
+    avatarText.value = user.value.name[0];
+    router.push('/oauth/redirect')
   }
 };
+
+const signUp = async (credentials: UserCredentials) => {
+  if (!loading.value) {
+    await signup(credentials)
+    messagePopupTitle.value = 'Registration successful'
+    messagePopupContent.value = 'You can now login with your credentials.'
+  }
+}
+
+const signOut = async () => {
+  if (!loading.value){
+    await signout()
+    router.push('/')
+  }
+}
 
 /* add breadcrumbs data (name and icon) to the breadcrumbs array,
 if the route is a page listed in drawerOptions, delete all breadcrumbs and add the one relative to the page

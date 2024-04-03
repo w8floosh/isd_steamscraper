@@ -2,11 +2,8 @@ FROM redis/redis-stack-server:latest
 
 # Copy a script into the image
 COPY init-redis.sh /usr/local/bin/init-redis.sh
-COPY redis.conf /usr/local/etc/redis/redis.conf
 # Set execute permissions on the script
-RUN chmod +x /usr/local/bin/init-redis.sh
-RUN echo '\nprotected-mode no' >> /opt/redis-stack/etc/redis-stack.conf 
-RUN echo '' >> /opt/redis-stack/etc/redis-stack.conf 
+RUN chmod 755 /usr/local/bin/init-redis.sh
 # Run the script when the container starts
 CMD ["init-redis.sh"]
 

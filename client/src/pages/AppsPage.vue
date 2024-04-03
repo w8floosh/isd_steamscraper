@@ -1,5 +1,5 @@
 <template>
-    <q-page class="row items-center justify-evenly">
+    <q-page class="apps-page">
         <AppCardList :apps="apps"/>
     </q-page>
 </template>
@@ -163,3 +163,11 @@ const apps: IAppMetadata[] = [
 ]
 
 </script>
+
+<style scoped>
+    .apps-page {
+        padding: 16px;
+        width: auto;
+        height: auto;
+    }
+</style>

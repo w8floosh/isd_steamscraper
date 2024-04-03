@@ -1,4 +1,10 @@
-import { IsAlphanumeric, IsEmail, MinLength } from 'class-validator';
+import {
+  IsAlphanumeric,
+  IsEmail,
+  IsNumberString,
+  Length,
+  MinLength,
+} from 'class-validator';
 import { User } from 'src/entities';
 
 export class UserCredentialsDto {
@@ -11,6 +17,10 @@ export class UserCredentialsDto {
 
   @IsAlphanumeric()
   steamWebAPIToken: string;
+
+  @IsNumberString()
+  @Length(17, 17)
+  steamId: string;
 }
 
 export type AuthorizeEndpointParsedQs = {

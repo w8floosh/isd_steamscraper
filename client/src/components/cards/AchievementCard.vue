@@ -1,15 +1,15 @@
 <template>
-    <q-card clickable bordered class="player-card" @click="$router.push(`/players/${id}`)">
+    <q-card bordered class="achievement-card">
         <!-- id upper left corner -->
-        <q-card-section class="player-card-section player-id">
-            <span>{{ id }}</span>
+        <q-card-section class="achievement-card-section app-name">
+            <span>{{ appName }}</span>
         </q-card-section>
         <!-- name center -->
-        <q-card-section v-if="name" class="player-card-section player-name">
+        <q-card-section v-if="name" class="achievement-card-section achievement-name">
             {{ name }}
         </q-card-section>
-        <q-card-section v-if="friendSince" class="player-card-section player-friend-since">
-            Friend since: {{ formatDate(friendSince, 'dd/MM/yyyy hh:mm') }}
+        <q-card-section v-if="unlockedAt" class="achievement-card-section achievement-unlock-time">
+            Unlock time: {{ formatDate(unlockedAt, 'dd/MM/yyyy hh:mm') }}
         </q-card-section>
     </q-card>
 </template>
@@ -19,40 +19,41 @@
 
 import { formatDate } from 'date-fns';
 interface ComponentProps {
-    id: string,
-    name?: string,
-    friendSince?: Date
+    appName: string,
+    name: string,
+    unlockedAt?: Date
 }
 const props = defineProps<ComponentProps>()
 
 </script>
 
 <style scoped>
-    .player-card-section {
+    .achievement-card-section {
         padding: 0;
     }
-    .player-card {
+    .achievement-card {
         display: grid;
         height: 64px;
         width: auto;
         padding: 8px;
-        grid-template-columns: 64px 1fr 1fr;
+        grid-template-columns: 128px 1fr 1fr;
         grid-template-rows: 16px 1fr 16px;
     }
-    .player-id {
+
+    .app-name {
         grid-row: 1;
-        grid-column: span 2;
+        grid-column: span 3;
         place-self: center start;
-        color: grey
+        color: grey;
     }
 
-    .player-name {
+    .achievement-name {
         grid-row: 2;
         grid-column: span 3;
         place-self: center
     }
 
-    .player-friend-since {
+    .achievement-unlock-time {
         grid-row: 3;
         grid-column: span 3;
         place-self: center end;

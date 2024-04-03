@@ -41,6 +41,35 @@ async def get_friend_list(userid, **kwargs):
     return dataclasses.asdict(result)
 
 
+@api.route("/<userid>/summary", methods=["GET"])
+@broker.ping(skip_on_failure=True)
+@cached(RedisCacheKeyPattern.USER_DATA, ["userid"], ["summary"])
+async def get_player_summary(userid, **kwargs):
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient()
+    result = prepare_response(
+        await client.get(
+            build_url(
+                SteamWebAPI.USER,
+                "GetPlayerSummaries",
+                "0002",
+                request.args.get("key", kwargs.get("key")),
+                steamids=userid,
+            )
+        )
+    )
+
+    player = result.data["response"]["players"][0]
+    player = clean_obj(player, entries=["avatar", "personaname"])
+
+    result.data.update({userid: player})
+    result.data.pop("response")
+
+    if injected_client is None:
+        await client.aclose()
+    return dataclasses.asdict(result)
+
+
 @api.route("/<userid>/recent", methods=["GET"])
 async def get_recently_played_games(userid, **kwargs):
     injected_client = kwargs.get("session")
@@ -108,13 +137,12 @@ async def get_owned_games(userid, **kwargs):
             clean_obj(game, clean_mode="pop", entries=["img_icon_url"])
             for game in games
         ]
-        result.data.update({"steamid": userid, "games": {}})
-
+        games_dict = dict()
         for game in games:
             id = game.pop("appid")
-            result.data["games"].update({id: game})
+            games_dict.update({id: game})
 
-        result.data.pop("response")
+        result.data = games_dict
     except:
         result.success = False
         result.data = {}

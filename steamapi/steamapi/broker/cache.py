@@ -14,8 +14,8 @@ from . import broker
 
 def cached(
     pattern: RedisCacheKeyPattern,
-    pattern_args: List = [],
-    readpath: List = [],
+    pattern_args: List,
+    readpath: List,
     keys_only=False,
     ttl=RedisCacheTTL.LONGEST,
 ):
@@ -40,27 +40,20 @@ def cached(
         @wraps(func)
         async def wrapper(*args, **kwargs):
             # vv Does not work? vv
-            json_key = pattern.resolve(
-                [].extend(
-                    [
-                        *[
-                            value
-                            for kwarg, value in kwargs.items()
-                            if kwarg in pattern_args
-                        ],
-                        *[
-                            value
-                            for rarg, value in request.args.items()
-                            if rarg in pattern_args
-                        ],
-                        *[
-                            value
-                            for varg, value in request.view_args.items()
-                            if varg in pattern_args
-                        ],
-                    ]
-                )
-            )
+            resolve_args = [
+                *[value for kwarg, value in kwargs.items() if kwarg in pattern_args],
+                *[
+                    value
+                    for rarg, value in request.args.items()
+                    if rarg in pattern_args
+                ],
+                *[
+                    value
+                    for varg, value in request.view_args.items()
+                    if varg in pattern_args
+                ],
+            ]
+            json_key = pattern.resolve(set(resolve_args))
 
             json_path = build_json_path(*readpath)
             # 3. want to renew the cache
@@ -73,8 +66,8 @@ def cached(
                 await write_cache(
                     json_key,
                     result.get("data"),
-                    ttl,
                     json_path,
+                    ttl,
                 )
                 return result
 
@@ -110,8 +103,8 @@ def cached(
                 await write_cache(
                     json_key,
                     result.get("data"),
-                    ttl,
                     json_path,
+                    ttl,
                 )
                 return result
 
@@ -120,13 +113,13 @@ def cached(
     return decorator
 
 
-async def write_cache(key, value, path=None, ttl=RedisCacheTTL.SHORT):
+async def write_cache(key, value, path, ttl):
     from . import broker
 
     await broker.connection.json().set(key, "$", {}, nx=True)
     if path:
         await broker.connection.json().set(key, path, {}, nx=True)
-    await broker.connection.json().merge(key, "$", value)
+    await broker.connection.json().merge(key, path, value)
 
     if ttl is not RedisCacheTTL.FOREVER:
         await broker.connection.expire(key, ttl.value)

@@ -144,13 +144,15 @@ export class LoginController {
     @Req() request: Request,
     @Body() credentials: UserCredentialsDto,
   ): Promise<void> {
-    const { email, password, steamWebAPIToken } = credentials;
+    const { email, password, steamWebAPIToken, steamId } = credentials;
+    console.log(credentials);
     await this.userService.registerUser(
       User.create({
         id: email.concat(await hash(email, SALT_ROUNDS)),
         email,
         username: email,
         steamWebAPIToken,
+        steamId,
         passwordHash: await hash(password, SALT_ROUNDS),
         createdAt: new Date().getTime() * 1000,
         createdIP: request.ip.split(':').pop(),
