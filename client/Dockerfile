@@ -5,11 +5,11 @@
 #
 FROM node:18 AS CLIENT_BUILD
 
-COPY package.json /tmp/package.json
-RUN cd /tmp && npm install
-RUN mkdir -p /usr/src/app/client && cp -a /tmp/node_modules /usr/src/app/client
-
 WORKDIR /usr/src/app/client
+
+COPY package.json package-lock.json ./
+RUN npm install
+
 COPY . .
 RUN npm run build
 

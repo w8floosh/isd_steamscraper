@@ -1,12 +1,10 @@
 import { RouteRecordRaw } from 'vue-router';
-import MainLayout from 'layouts/MainLayout.vue';
-import StatsPage from 'pages/StatsPage.vue';
-import UserPage from 'pages/UserPage.vue';
-import LeaderboardsPage from 'pages/LeaderboardsPage.vue';
-import IndexPage from 'pages/IndexPage.vue';
-import AppsPage from 'pages/AppsPage.vue';
-import ErrorNotFound from 'pages/ErrorNotFound.vue';
-import FriendsPage from 'src/pages/FriendsPage.vue';
+import MainLayout from 'src/layouts/MainLayout.vue';
+import UserPage from 'src/pages/UserPage.vue';
+import LeaderboardsPage from 'src/pages/LeaderboardsPage.vue';
+import IndexPage from 'src/pages/IndexPage.vue';
+import AppsPage from 'src/pages/AppsPage.vue';
+import ErrorNotFound from 'src/pages/ErrorNotFound.vue';
 import OAuthPage from 'src/pages/OAuthPage.vue';
 
 const routes: RouteRecordRaw[] = [
@@ -22,7 +20,7 @@ const routes: RouteRecordRaw[] = [
     path: '/auth',
     component: MainLayout,
     children: [{ path: '', component: IndexPage }],
-    props: { auth: 'true' },
+    props: { auth: true },
     meta: {
       icon: 'lock',
     },
@@ -41,6 +39,15 @@ const routes: RouteRecordRaw[] = [
       icon: 'person',
     },
   },
+  {
+    path: '/user/:userId',
+    component: MainLayout,
+    children: [{ path: '', component: UserPage, props: true }],
+    meta: {
+      requiresAuth: true,
+      icon: 'person',
+    },
+  },
 
   {
     path: '/apps',
@@ -52,25 +59,6 @@ const routes: RouteRecordRaw[] = [
     },
   },
 
-  {
-    path: '/stats',
-    component: MainLayout,
-    children: [{ path: '', component: StatsPage, name: 'Player stats' }],
-    meta: {
-      requiresAuth: true,
-      icon: 'query_stats',
-    },
-  },
-
-  {
-    path: '/friends',
-    component: MainLayout,
-    children: [{ path: '', component: FriendsPage, name: 'Friends' }],
-    meta: {
-      requiresAuth: true,
-      icon: 'group',
-    },
-  },
   {
     path: '/leaderboards',
     component: MainLayout,

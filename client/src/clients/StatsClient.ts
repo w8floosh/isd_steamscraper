@@ -1,5 +1,5 @@
 import { api as axios } from 'src/boot/axios';
-import { ISteamAPIResponse } from './responses';
+import { ISteamAPIResponse, SteamAPIError } from './responses';
 import { useAuthStore } from 'src/stores/auth';
 import { storeToRefs } from 'pinia';
 import {
@@ -9,10 +9,10 @@ import {
 } from './responses';
 
 export default new (class StatsClient {
-  private base_url = process.env.STEAMAPI_PROXY_URL + '/compute/players';
+  private base_url = process.env.STEAMAPI_PROXY_URL + '/compute/stats/players';
 
   async getAchievementScore(
-    userId: number
+    userId: string
   ): Promise<ISteamAPIResponse<AchievementScoreResponse>> {
     try {
       const url = `${this.base_url}/${userId}/gamerscore`;
@@ -22,6 +22,8 @@ export default new (class StatsClient {
       const response = await axios.get<
         ISteamAPIResponse<AchievementScoreResponse>
       >(url, { params });
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error retrieving achievement score:', error);
@@ -30,7 +32,7 @@ export default new (class StatsClient {
   }
 
   async getFavoriteGenresAndCategories(
-    userId: number
+    userId: string
   ): Promise<ISteamAPIResponse<FavoriteGenresCategoriesResponse>> {
     try {
       const url = `${this.base_url}/${userId}/favorite`;
@@ -40,6 +42,8 @@ export default new (class StatsClient {
       const response = await axios.get<
         ISteamAPIResponse<FavoriteGenresCategoriesResponse>
       >(url, { params });
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error retrieving favorite genres and categories:', error);
@@ -48,7 +52,7 @@ export default new (class StatsClient {
   }
 
   async getForgottenGames(
-    userId: number
+    userId: string
   ): Promise<ISteamAPIResponse<ForgottenGamesResponse>> {
     try {
       const url = `${this.base_url}/${userId}/forgotten`;
@@ -58,6 +62,8 @@ export default new (class StatsClient {
       const response = await axios.get<
         ISteamAPIResponse<ForgottenGamesResponse>
       >(url, { params });
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error retrieving forgotten games:', error);

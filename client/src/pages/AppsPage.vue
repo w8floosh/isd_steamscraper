@@ -5,8 +5,8 @@
 </template>
 
 <script setup lang="ts">
-import { IAppMetadata } from 'components/models';
-import AppCardList from 'components/lists/AppCardList.vue';
+import { IAppMetadata } from 'src/components/models';
+import AppCardList from 'src/components/lists/AppCardList.vue';
 
 const apps: IAppMetadata[] = [
     {

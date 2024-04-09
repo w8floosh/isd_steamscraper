@@ -1,4 +1,4 @@
-import { IDrawerOption } from '../components/models';
+import { IDrawerOption } from 'src/components/models';
 
 export const useDrawerOptions = () => {
   const publicDrawerOptions: IDrawerOption[] = [

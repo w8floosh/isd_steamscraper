@@ -1,17 +1,38 @@
 import asyncio
 import dataclasses
 import json
+from sys import stderr
+from typing import List
+from collections import OrderedDict
 from datetime import datetime, UTC
 from . import broker
 from ..api.types import SteamAPIResponse
 from .types import RedisMessage
 
 
-def build_json_path(*path):
+def build_json_path(path: List, args=[]):
+    fullpath = path.copy()
+    fullpath.extend(args)
     pathstr = "$"
-    for level in path:
+    for level in fullpath:
         pathstr += f".{level}"
     return pathstr
+
+
+def extract_resolve_args(args, kw, view, query):
+    keys = [
+        *[value for kwarg, value in kw.items() if kwarg in args],
+        *[value for rarg, value in query.items() if rarg in args],
+        *[value for varg, value in view.items() if varg in args],
+    ]
+    result = OrderedDict.fromkeys(keys)
+    ext_args = kw.get("custom_req_data")
+
+    if ext_args:
+        for arg, value in ext_args.items():
+            if arg in args:
+                result.update({value: None})
+    return result
 
 
 async def setup_consumer(stream: str, name: str):

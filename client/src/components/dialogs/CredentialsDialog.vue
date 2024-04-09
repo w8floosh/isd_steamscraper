@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { UserCredentials } from '../../composables/types';
+import { UserCredentials } from 'src/composables/types';
 import { computed, ref } from 'vue';
 const props = defineProps<{ modelValue: boolean, dialogMode: 'login' | 'register' }>();
 const emits = defineEmits<{

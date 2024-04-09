@@ -1,25 +1,26 @@
 <template>
     <q-page class="app-data-page">
         <q-card class="app-data-card" flat bordered>
-            <q-card-section horizontal class="bg-primary text-white app-metadata col-2">
-                <div class="app-metadata-id text-grey-5">{{ app.id }}</div>
-                <div class="app-metadata-name">{{ app.name }}</div>
-                <div v-if="app.lastUpdate" class="app-metadata-update text-grey-5">Last updated: {{ app.lastUpdate }}</div>
+            <q-card-section horizontal class="bg-primary text-white app-info col-2">
+                <div class="app-id text-grey-5">{{ app.id }}</div>
+                <div class="app-name">{{ app.name }}</div>
+                <div class="app-players text-grey-5">Current players: {{ appData.players }}</div>
+                <div v-if="app.lastUpdate" class="app-update text-grey-5">Last updated: {{ app.lastUpdate }}</div>
             </q-card-section>  
-            <q-card-section horizontal class="text-black app-details col-10">
-                <div class="app-metadata-id text-grey-5">Current players: {{ appData.players }}</div>
-                <div class="app-metadata-name">{{ appData. }}</div>
-                <div v-if="app.lastUpdate" class="app-metadata-update text-grey-5">Last updated: {{ app.lastUpdate }}</div>
+            <q-card-section horizontal class="text-black col-10">
+                <AppDetailsCard class="app-details" :details="appData.details"/>
+                <AppNewsList class="app-news" :news="appData.news"/>
+                <AppAchievementsList class="app-achievements" :achievements="appData.achievements"/>
             </q-card-section>  
         </q-card>
     </q-page>
 </template>
 
 <script setup lang="ts">
-import { IAppMetadata } from 'components/models';
-import { IAppData } from 'components/models'
+import { IAppMetadata } from 'src/components/models';
+import { IAppData } from 'src/components/models'
 import { onBeforeMount, ref } from 'vue';
-import { useAppsService } from 'composables/useAppsService';
+import { useAppsService } from 'src/composables/useAppsService';
 
 interface ComponentProps {
     app: IAppMetadata

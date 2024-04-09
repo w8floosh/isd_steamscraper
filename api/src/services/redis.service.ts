@@ -31,6 +31,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
+    // await this.client.xgroup(
+    //   'CREATE',
+    //   REQUEST_STREAM,
+    //   CONSUMER_GROUP,
+    //   '$',
+    //   'MKSTREAM',
+    // );
     while (true) {
       let requests = await this.client.xreadgroup(
         'GROUP',

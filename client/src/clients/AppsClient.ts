@@ -6,6 +6,7 @@ import {
   AppNewsResponse,
   ISteamAPIResponse,
   NoCurrentPlayersResponse,
+  SteamAPIError,
 } from './responses';
 import { useAuthStore } from 'src/stores/auth';
 import { storeToRefs } from 'pinia';
@@ -33,6 +34,8 @@ export default new (class AppsClient {
           params,
         }
       );
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error getting app list:', error);
@@ -60,6 +63,8 @@ export default new (class AppsClient {
           params,
         }
       );
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error getting app news:', error);
@@ -90,6 +95,8 @@ export default new (class AppsClient {
           params,
         }
       );
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error getting app details:', error);
@@ -115,6 +122,8 @@ export default new (class AppsClient {
       >(url, {
         params,
       });
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error getting app global achievement percentages:', error);
@@ -137,6 +146,8 @@ export default new (class AppsClient {
       >(url, {
         params,
       });
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error getting app current players:', error);

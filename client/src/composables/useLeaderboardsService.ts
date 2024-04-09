@@ -1,11 +1,11 @@
-import { ISteamAPIResponse } from 'src/clients/types';
+import { ISteamAPIResponse } from 'src/clients/responses';
 import { ref } from 'vue';
 import leaderboardsClient from 'src/clients/LeaderboardsClient';
 
 export const useLeaderboardsService = () => {
   const loading = ref(false);
 
-  async function getAchievementScoreFriendsLeaderboard(userId: number) {
+  async function getAchievementScoreFriendsLeaderboard(userId: string) {
     loading.value = true;
     try {
       const response =
@@ -19,7 +19,7 @@ export const useLeaderboardsService = () => {
     }
   }
 
-  async function getPlaytimeFriendsLeaderboard(userId: number) {
+  async function getPlaytimeFriendsLeaderboard(userId: string) {
     loading.value = true;
     try {
       const response = await leaderboardsClient.getPlaytimeFriendsLeaderboard(
@@ -34,7 +34,7 @@ export const useLeaderboardsService = () => {
     }
   }
 
-  async function getVersatilityScoreFriendsLeaderboard(userId: number) {
+  async function getVersatilityScoreFriendsLeaderboard(userId: string) {
     loading.value = true;
     try {
       const response =

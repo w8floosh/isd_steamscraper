@@ -1,6 +1,6 @@
 import { IAppMetadata } from 'src/components/models';
 
-export type Category = { id: string; description: string };
+export type Category = { id?: string; description: string; playtime?: number };
 
 export type Genre = Category;
 
@@ -31,6 +31,7 @@ export type AppNews = {
 
 export type Achievement = {
   apiname: string;
+  name?: string;
   unlocktime: number;
   achieved: boolean;
 };
@@ -52,7 +53,7 @@ export type OwnedGame = {
   playtime_disconnected: number;
 };
 
-export type Friend = { steamid: number; friend_since: number };
+export type Friend = { steamid: string; friend_since: number };
 
 export type PlayerSummary = {
   avatarmedium: string;

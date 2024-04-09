@@ -2,10 +2,12 @@
     <q-card class="user-page">
         <q-card-section class="bg-primary text-white user-metadata">
             <div class="user-metadata-name">{{ name }}</div>
-            <div class="user-metadata-email text-grey-5">{{ email }}</div>
-            <div class="user-metadata-token text-grey-5">Steam Web API token: {{ steamWebAPIToken }}</div>
+            <div v-if="email" class="user-metadata-email text-grey-5">{{ email }}</div>
+            <div v-if="steamWebAPIToken" class="user-metadata-token text-grey-5">Steam Web API token: {{ steamWebAPIToken }}</div>
         </q-card-section>
         <q-card-section class="user-content">
+            {{ externalUser?.username }} 
+            {{ userId }}
             <q-tabs
             v-model="tab"
             dense
@@ -23,19 +25,21 @@
                 
                 <q-tab-panel name="friends">
                     <PlayerCardList v-if="userData.friends?.length" :players="userData.friends"/>
-                    <div v-else>No friends found</div>
+                    <q-spinner-dots v-else-if="loading" color="white" size="40px" />
+                    <div v-else>{{ tabErrorMessage?? "No friends found" }}</div>
                 </q-tab-panel>
 
                 <q-tab-panel name="games">
-                    <q-splitter v-model="split">
+                    <q-splitter v-model="gamesSplit" before-class="user-library-inner-tabs">
                         <template v-slot:before>
                             <q-tabs
-                            v-model="tab"
-                            dense
+                            v-model="gamesTab"
+                            vertical
                             class="bg-grey-2 text-grey-7"
                             active-color="primary"
                             indicator-color="purple"
                             align="justify"
+                            stretch
                             >
                                 <q-tab name="allGames" label="All"/>
                                 <q-tab name="recentGames" label="Recently played"/>
@@ -44,17 +48,20 @@
                         </template>
                         <template v-slot:after>
                             <q-tab-panels v-model="gamesTab" animated class="bg-primary text-white">
-                                <q-tab-panel name="allGames">
+                                <q-tab-panel name="allGames" class="user-library-inner-content">
                                     <AppCardList v-if="userData.games?.length" :apps="userData.games"/>
-                                    <div v-else>No games found</div>
+                                    <q-spinner-dots v-else-if="loading" color="white" size="40px" />
+                                    <div v-else>{{ tabErrorMessage?? "No games found" }}</div>
                                 </q-tab-panel>
-                                <q-tab-panel name="recentGames">
+                                <q-tab-panel name="recentGames" class="user-library-inner-content">
                                     <AppCardList v-if="userData.recent?.length" :apps="userData.recent"/>
-                                    <div v-else>No games played recently</div>
+                                    <q-spinner-dots v-else-if="loading" color="white" size="40px" />
+                                    <div v-else>{{ tabErrorMessage?? "No games played recently" }}</div>
                                 </q-tab-panel>
-                                <q-tab-panel name="forgottenGames">
+                                <q-tab-panel name="forgottenGames" class="user-library-inner-content">
                                     <AppCardList v-if="userData.forgotten?.length" :apps="userData.forgotten"/>
-                                    <div v-else>No games found</div>
+                                    <q-spinner-dots v-else-if="loading" color="white" size="40px" />
+                                    <div v-else>{{ tabErrorMessage?? "No games found" }} </div>
                                 </q-tab-panel>
                             </q-tab-panels>
                         </template>
@@ -62,13 +69,65 @@
                 </q-tab-panel>
                 
                 <q-tab-panel name="achievements">
-                    <AchievementCardList v-if="userData.achievements?.length" :achievements="userData.achievements"/>
-                    <div v-else>No achievements unlocked</div>
+                    {{ userData.achievements?.length }}
+                    <q-infinite-scroll ref="scrollTargetRef" v-if="userData.games?.length" 
+                        class="achievements-infscr" 
+                        :disable="!userData.games?.length" 
+                        @load="loadAchievements" 
+                        :scroll-target="scrollTargetRef"
+                    >
+                        <div v-for="(item, index) in userData.achievements" :key="item.apiName || index">
+                            <AchievementCard
+                                :appName="item.appName"
+                                :name="item.name" 
+                                :unlockedAt="item.unlockTime"
+                            />
+                        </div>
+                        <template v-slot:loading>
+                            <div class="row justify-center q-my-md">
+                                <q-spinner-dots color="white" size="40px" />
+                            </div>
+                        </template>
+                    </q-infinite-scroll>
+                    <div v-else> {{ tabErrorMessage?? "Cannot retrieve achievements without loading the game list" }}</div>
+
                 </q-tab-panel>
 
                 <q-tab-panel name="favorites">
-                    <AppCardList v-if="userData.recent?.length" :apps="userData.recent"/>
-                    <div v-else>No content</div>
+                    <q-splitter v-model="favoritesSplit" before-class="user-library-inner-tabs">
+                        <template v-slot:before>
+                            <q-tabs
+                            v-model="favoritesTab"
+                            vertical
+                            class="bg-grey-2 text-grey-7"
+                            active-color="primary"
+                            indicator-color="purple"
+                            align="justify"
+                            stretch
+                            >
+                                <q-tab name="genres" label="Genres"/>
+                                <q-tab name="categories" label="Categories"/>
+                            </q-tabs>
+                        </template>
+                        <template v-slot:after>
+                            <q-tab-panels v-model="favoritesTab" animated class="bg-primary text-white">
+                                <q-tab-panel name="genres" class="user-library-inner-content">
+                                    <GenreCategoryInfoCardList v-if="userData.favorite.genres?.length" 
+                                        :data="userData.favorite.genres"
+                                        sort="desc"/>
+                                    <q-spinner-dots v-else-if="loading" color="white" size="40px" />
+                                    <div v-else>No favorite genres found</div>
+                                </q-tab-panel>
+                                <q-tab-panel name="categories" class="user-library-inner-content">
+                                    <GenreCategoryInfoCardList v-if="userData.favorite.categories?.length" 
+                                        :data="userData.favorite.categories"
+                                        sort="desc"/>
+                                    <q-spinner-dots v-else-if="loading" color="white" size="40px" />
+                                    <div v-else>No favorite categories found</div>
+                                </q-tab-panel>
+                            </q-tab-panels>
+                        </template>
+                    </q-splitter>
                 </q-tab-panel>
             </q-tab-panels>
         </q-card-section>
@@ -77,29 +136,24 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useUserTabs } from '../composables/useUserTabs';
-import { UserData, UserTab, UserGamesTab } from '../composables/types'
+import { useUserTabs } from 'src/composables/useUserTabs';
+import { UserData, UserTab, UserGamesTab, IUser } from 'src/composables/types'
 import { useAuthStore } from 'src/stores/auth';
 import { storeToRefs } from 'pinia';
 import PlayerCardList from 'src/components/lists/PlayerCardList.vue';
 import AppCardList from 'src/components/lists/AppCardList.vue';
-import AchievementCardList from 'src/components/lists/AchievementCardList.vue';
-import { RecentlyPlayedResponse, FriendListResponse, OwnedGamesResponse, PlayerAchievementsResponse, FavoriteGenresCategoriesResponse } from '../clients/responses'
-import { Achievement } from '../clients/entities';
+import AchievementCard from 'src/components/cards/AchievementCard.vue';
+import { RecentlyPlayedResponse, FriendListResponse, OwnedGamesResponse, FavoriteGenresCategoriesResponse, SteamAPIError, AllPlayerAchievementsResponse } from 'src/clients/responses'
 import { IAchievementMetadata } from 'src/components/models';
+import GenreCategoryInfoCardList from 'src/components/lists/GenreCategoryInfoCardList.vue';
+import { useUserService } from 'src/composables/useUserService';
 
-const tab = ref<UserTab>('games')
-const gamesTab = ref<UserGamesTab>('allGames')
-const split = ref<number>(20)
-const { loadData } = useUserTabs()
-const { user } = storeToRefs(useAuthStore())
+interface ComponentProps {
+    userId?: string
+}
+const props = defineProps<ComponentProps>()
 
-const name = computed(() => user.value?.name)
-const email = computed(() => user.value?.email)
-const steamWebAPIToken = computed(() => user.value?.steamWebAPIToken)
-
-
-const userData = ref<UserData>({
+const EMPTY_USERDATA: UserData = {
     recent: undefined,
     friends: undefined,
     games: undefined,
@@ -109,52 +163,64 @@ const userData = ref<UserData>({
         genres: undefined,
         categories: undefined
     }
-})
+} 
+const LOADING_USER: Partial<IUser> = {
+    username: '...',
+    avatarURL: '',
+    steamId: '...'
+}
+
+const scrollTargetRef = ref(undefined)
+const tab = ref<UserTab>('friends')
+const gamesTab = ref<UserGamesTab | null>(null)
+const favoritesTab = ref<'genres' | 'categories' | null>(null)
+const tabErrorMessage = ref<string | null>(null)
+const gamesSplit = ref<number>(20)
+const favoritesSplit = ref<number>(20)
+
+const { loadData } = useUserTabs()
+
+const { user: userAccount } = storeToRefs(useAuthStore())
+const externalUser = ref<Partial<IUser> | null>(null)
+
+const user = computed(() => externalUser.value?? userAccount.value )
+const name = computed(() => user.value.username || '')
+const email = computed(() => user.value.email || '')
+const steamWebAPIToken = computed(() => user.value.steamWebAPIToken || '')
+const steamId = computed(() => user.value.steamId || '')
+const loading = ref(false)
+const lastApp = ref('')
+
+const userData = ref<UserData>(structuredClone(EMPTY_USERDATA))
+// const userData = computed(() => userData.value)
 
 const load = async <T extends UserTab>(tab: T) => {
+    loading.value = true;
     switch (tab){
         case 'friends':
-            if (userData.value.friends) return
-            const friends = await loadData<FriendListResponse>('friends', user.value.steamId)
+            if (userData.value.friends) break
+            const friends = await loadData<FriendListResponse>('friends', steamId.value)
             userData.value.friends = friends?.map((friend) => ({
                 id: friend.steamid,
                 name: friend.steamid.toString(),
                 friendSince: new Date(friend.friend_since * 1000)
             }))
             break;
-        case 'achievements':
-            if (userData.value.achievements) return
-            // @TODO: Implement achievements
-        
-            let achievementsPerGame: Record<string, IAchievementMetadata[]> = {} 
-            userData.value.games?.forEach(async (game) => {
-                const gameAchs = await loadData<PlayerAchievementsResponse>('achievements', user.value.steamId, game.id)
-                if (!gameAchs) return
-                const id = game.id.toString()
-                if (!gameAchs[id]) return
-                achievementsPerGame[id] = gameAchs[id]?.map((ach: Achievement) => ({
-                    appName: game.name,
-                    name: ach.apiname,
-                    unlockTime: new Date(ach.unlocktime * 1000)
-                })) as IAchievementMetadata[]
-            })
-            
-            userData.value.achievements = Object.values(achievementsPerGame).reduce((acc, val) => acc.concat(val), [])
-            break;
         case 'favorites':
-            if (userData.value.favorite.genres && userData.value.favorite.categories) return
-            const data = await loadData<FavoriteGenresCategoriesResponse>('favorites', user.value.steamId)
-            if (!data) return
-            const { genres, categories } = data
-            userData.value.favorite.genres = genres?.map(genre => ({
-                id: genre.id,
-                name: genre.description
-            }))
+            if (userData.value.favorite.genres && userData.value.favorite.categories) break
+            const data = await loadData<FavoriteGenresCategoriesResponse>('favorites', steamId.value)
+            if (!data) break
 
-            userData.value.favorite.categories = categories?.map(category => ({
-                id: category.id,
-                name: category.description
-            }))
+            const { genres, categories } = data
+            userData.value.favorite.genres = Object.entries(genres).map(
+                ([description, playtime]) => ({description, playtime})
+            )
+            userData.value.favorite.categories = Object.entries(categories).map(
+                ([description, playtime]) => ({description, playtime})
+            )
+            break;
+        case 'games':
+            gamesTab.value = 'allGames'
             break;
         default:
             break;
@@ -162,20 +228,21 @@ const load = async <T extends UserTab>(tab: T) => {
 }
 
 const loadGames = async <T extends UserGamesTab>(tab: T) => {
+    loading.value = true;
     switch (tab){
         case 'allGames':
-            if (userData.value.games) return
-            const games = await loadData<OwnedGamesResponse>('allGames', user.value.steamId, true, true)
-            if (!games) return
+            if (userData.value.games) break
+            const games = await loadData<OwnedGamesResponse>('allGames', steamId.value, true, true)
+            if (!games) break
             userData.value.games = Object.entries(games).map((([id, game]) => ({
                 id: parseInt(id),
                 name: game.name
             })))
             break;
         case 'recentGames':
-            if (userData.value.recent) return
-            const recent = await loadData<RecentlyPlayedResponse>('recentGames', user.value.steamId)
-            if (!recent) return
+            if (userData.value.recent) break
+            const recent = await loadData<RecentlyPlayedResponse>('recentGames', steamId.value)
+            if (!recent) break
             userData.value.recent = Object.entries(recent).map(([id, metadata]) => ({
                 id: parseInt(id),
                 name: metadata.name,
@@ -185,9 +252,9 @@ const loadGames = async <T extends UserGamesTab>(tab: T) => {
             }))
             break;
         case 'forgottenGames':
-            if (userData.value.forgotten) return
-            const forgotten = await loadData<OwnedGamesResponse>('forgottenGames', user.value.steamId, false, true)
-            if (!forgotten) return
+            if (userData.value.forgotten) break
+            const forgotten = await loadData<OwnedGamesResponse>('forgottenGames', steamId.value, false, true)
+            if (!forgotten) break
             userData.value.forgotten = Object.entries(forgotten).map((([id, game]) => ({
                 id: parseInt(id),
                 name: game.name
@@ -196,18 +263,132 @@ const loadGames = async <T extends UserGamesTab>(tab: T) => {
         default:
             break;
     }
+}
 
+const loadAchievements = async (index: number, done: (stop?: boolean) => void) => {
+    loading.value = true
+    console.log(lastApp.value)
+    if (!userData.value.games){
+        loading.value = false
+        done()
+        return
+    }
+    const startIndex = Math.min(10 * (index - 1), userData.value.games.length)
+    console.log(`startIndex: ${startIndex}, games.length: ${userData.value.games.length}`)
+
+    const endIndex = startIndex + 10
+    const slicedGames = userData.value.games.slice(startIndex, Math.min(endIndex, userData.value.games.length))
+
+    if (!slicedGames.length){
+        loading.value = false
+        done(true)
+        return
+    }
+
+    const data = await loadData<AllPlayerAchievementsResponse>('achievements', steamId.value, slicedGames.map(game => game.id))
+    if (!data){
+        lastApp.value = slicedGames.slice(-1)[0].name
+        loading.value = false
+        done()
+        return
+    }
+
+    const achievementListMetadata = Object.entries(data).reduce((acc: IAchievementMetadata[], [id, achs]) => {
+        const game = slicedGames.find((g) => g.id === parseInt(id))
+        if (!game) return acc
+        acc.push(...achs.map((ach) => ({
+            appName: game.name,
+            apiName: ach.apiname,
+            name: ach.name || ach.apiname,
+            unlockTime: new Date(ach.unlocktime * 1000)
+        })))
+        return acc
+    }, [] as IAchievementMetadata[])
+
+    console.log(achievementListMetadata)
+
+    if (!achievementListMetadata.length){
+        lastApp.value = slicedGames.slice(-1)[0].name
+        loading.value = false;
+        done()
+        return
+    }
+
+    (userData.value.achievements ??= []).push(...achievementListMetadata)
+    lastApp.value = achievementListMetadata.slice(-1)[0].appName
+    loading.value = false
+    done()
+}
+
+const getExternalUserData = async (id: string) => {
+    loading.value = true
+    userData.value = structuredClone(EMPTY_USERDATA)
+    externalUser.value = structuredClone(LOADING_USER)
+    const { getPlayerSummary } = useUserService()
+    const playerSummary = (await getPlayerSummary(id))[id]
+    externalUser.value = {
+        username: playerSummary.personaname,
+        avatarURL: playerSummary.avatarmedium,
+        steamId: props.userId,
+    }
 }
 
 watch(tab, async (newTab) => {
-    if (newTab === 'games') split.value = 20
-    else split.value = 0
-    await load(newTab)
+    tabErrorMessage.value = null
+    if (!newTab) return
+    if (newTab === 'games') gamesSplit.value = 20
+    else gamesSplit.value = 0
+    try {
+        await load(newTab)
+    }
+    catch (e) {
+        tabErrorMessage.value = (e as SteamAPIError).message
+    }
+    finally {
+        loading.value = false
+    }
 }, {immediate: true})
 
 watch(gamesTab, async (newGamesTab) => {
-    await loadGames(newGamesTab)
+    tabErrorMessage.value = null
+    if (!newGamesTab) return
+    try {
+        await loadGames(newGamesTab)
+    }
+    catch (e) {
+        tabErrorMessage.value = (e as SteamAPIError).message
+    } finally {
+        loading.value = false
+    }
 }, {immediate: true})
+
+watch(() => props.userId, async (newId, oldId) => {
+    // tab.value = null
+    // gamesTab.value = null
+    // favoritesTab.value = null
+    tabErrorMessage.value = null
+    if (!newId){
+        userData.value = structuredClone(EMPTY_USERDATA)
+        externalUser.value = null
+        try {
+            await load(tab.value)
+        } catch (e) {
+        tabErrorMessage.value = (e as SteamAPIError).message
+        } finally {
+            loading.value = false
+        }
+        return
+    }
+    if (newId !== oldId) try {
+        await getExternalUserData(newId as string)
+        await load(tab.value)
+    } catch (e) {
+        tabErrorMessage.value = (e as SteamAPIError).message
+    } finally {
+        loading.value = false
+    }
+}, {immediate: true, deep: true})
+
 
 </script>
 
@@ -240,5 +421,15 @@ watch(gamesTab, async (newGamesTab) => {
     .user-metadata-token {
         font-size: 12px;
         place-self: center end;
+    }
+    .user-library-inner-tabs {
+        height: auto;
+    }
+    .user-library-inner-content {
+        padding: 0px 0px 0px 8px
+    }
+    .achievements-infscr {
+        height: calc(100vh - 300px);
+        overflow: auto;
     }
 </style>

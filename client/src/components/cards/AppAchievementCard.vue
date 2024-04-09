@@ -1,15 +1,15 @@
 <template>
-    <q-card bordered class="achievement-card">
+    <q-card bordered class="app-achievement-card">
         <!-- id upper left corner -->
-        <q-card-section class="achievement-card-section app-name">
-            <span>{{ appName }}</span>
+        <q-card-section class="app-achievement-card-section app-name">
+            <span>{{ achievement.appName }}</span>
         </q-card-section>
         <!-- name center -->
-        <q-card-section v-if="name" class="achievement-card-section achievement-name">
-            {{ name }}
+        <q-card-section v-if="achievement.name" class="app-achievement-card-section achievement-name">
+            {{ achievement.name }}
         </q-card-section>
-        <q-card-section v-if="unlockedAt" class="achievement-card-section achievement-unlock-time">
-            Unlock time: {{ formatDate(unlockedAt, 'dd/MM/yyyy hh:mm') }}
+        <q-card-section v-if="achievement.unlockTime" class="app-achievement-card-section achievement-unlock-time">
+            Unlock time: {{ formatDate(achievement.unlockTime, 'dd/MM/yyyy hh:mm') }}
         </q-card-section>
     </q-card>
 </template>
@@ -18,20 +18,19 @@
 <script setup lang="ts">
 
 import { formatDate } from 'date-fns';
+import { IAchievementMetadata } from '../models';
 interface ComponentProps {
-    appName: string,
-    name: string,
-    unlockedAt?: Date
+    achievement: IAchievementMetadata
 }
 const props = defineProps<ComponentProps>()
 
 </script>
 
 <style scoped>
-    .achievement-card-section {
+    .app-achievement-card-section {
         padding: 0;
     }
-    .achievement-card {
+    .app-achievement-card {
         display: grid;
         height: 64px;
         width: auto;
@@ -51,7 +50,7 @@ const props = defineProps<ComponentProps>()
         grid-row: 2;
         grid-column: span 3;
         place-self: center;
-        color: black
+        color: black;
     }
 
     .achievement-unlock-time {

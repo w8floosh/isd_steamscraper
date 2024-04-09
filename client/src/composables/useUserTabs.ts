@@ -5,7 +5,7 @@ import { useStatsService } from './useStatsService';
 const {
   getFriendsList,
   getOwnedGames,
-  getPlayerAchievements,
+  getAllPlayerAchievements,
   getRecentlyPlayed,
 } = useUserService();
 
@@ -14,19 +14,19 @@ const { getFavoriteGenresAndCategories, getForgottenGames } = useStatsService();
 export const useUserTabs = () => {
   const loaderMapping = new Map<
     UserTab | UserGamesTab,
-    (userId: number, ...args: any[]) => Promise<any>
+    (userId: string, ...args: any[]) => Promise<any>
   >([
     ['allGames', getOwnedGames],
     ['recentGames', getRecentlyPlayed],
     ['forgottenGames', getForgottenGames],
     ['friends', getFriendsList],
-    ['achievements', getPlayerAchievements],
+    ['achievements', getAllPlayerAchievements],
     ['favorites', getFavoriteGenresAndCategories],
   ]);
 
   async function loadData<T = unknown>(
     tab: UserTab | UserGamesTab,
-    userId: number,
+    userId: string,
     ...args: any[]
   ): Promise<T | undefined> {
     const handler = loaderMapping.get(tab);

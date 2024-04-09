@@ -33,6 +33,8 @@ export type AppGlobalAchievementPercentagesResponse = Record<
 
 export type PlayerAchievementsResponse = Record<string, Achievement[]>;
 
+export type AllPlayerAchievementsResponse = PlayerAchievementsResponse;
+
 export type AppNewsResponse = AppNews[];
 
 export type FriendListResponse = Friend[];
@@ -54,8 +56,14 @@ export type ForgottenGamesResponse = OwnedGamesResponse;
 export type AchievementScoreResponse = { score: number };
 
 export type FavoriteGenresCategoriesResponse = {
-  genres: Genre[];
-  categories: Category[];
+  genres: Record<string, number>;
+  categories: Record<string, number>;
 };
 
 export type BackendResponse<T = unknown> = Record<string, T>;
+
+export class SteamAPIError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}

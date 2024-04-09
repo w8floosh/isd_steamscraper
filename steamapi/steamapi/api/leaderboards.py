@@ -31,7 +31,10 @@ async def _set_payload_with_playtimes(userid, message: RedisMessage):
 
     async with AsyncClient(limits=DEFAULT_API_CLIENT_LIMITS) as session:
         friendlist = await get_friend_list(
-            userid, key=request.args.get("key"), session=session
+            userid,
+            key=request.args.get("key"),
+            session=session,
+            custom_req_data={"userid": userid},
         )
 
         requests = [
@@ -40,11 +43,12 @@ async def _set_payload_with_playtimes(userid, message: RedisMessage):
                 key=request.args.get("key"),
                 include_played_free_games=1,
                 session=session,
+                custom_req_data={"userid": friend["steamid"]},
             )
             for friend in friendlist["data"]
         ]
 
-        await set_payload_from_requests(
+        message = await set_payload_from_requests(
             message,
             requests,
             set_callback,
@@ -66,16 +70,22 @@ async def get_friends_achievement_score_leaderboard(userid):
 
     async with AsyncClient(limits=DEFAULT_API_CLIENT_LIMITS) as session:
         friendlist = await get_friend_list(
-            userid, key=request.args.get("key"), session=session
+            userid,
+            key=request.args.get("key"),
+            session=session,
+            custom_req_data={"userid": userid},
         )
         requests = [
             get_achievement_score(
-                friend["steamid"], key=request.args.get("key"), session=session
+                friend["steamid"],
+                key=request.args.get("key"),
+                session=session,
+                custom_req_data={"userid": friend["steamid"]},
             )
             for friend in friendlist["data"][7:10]
         ]
 
-        await set_payload_from_requests(
+        message = await set_payload_from_requests(
             message,
             requests,
             set_callback,
@@ -84,14 +94,12 @@ async def get_friends_achievement_score_leaderboard(userid):
     print("Sending request", file=stderr)
     # publish message to Redis
     reqid = await send_request(message)
-    # add channel to kwargs when implementing auth
     print("Request sent with id ", reqid, file=stderr)
 
     response = await get_response(userid)
 
     # publish message to Redis
     return dataclasses.asdict(response)
-    # add channel to kwargs when implementing auth
 
 
 @api.route("/friends/<userid>/playtime", methods=["GET"])
@@ -102,14 +110,11 @@ async def get_friends_playtime_leaderboard(userid):
     print("Sending request", file=stderr)
     # publish message to Redis
     reqid = await send_request(message)
-    # add channel to kwargs when implementing auth
     print("Request sent with id ", reqid, file=stderr)
 
     response = await get_response(userid)
 
-    # publish message to Redis
     return dataclasses.asdict(response)
-    # add channel to kwargs when implementing auth
 
 
 @api.route("/friends/<userid>/versatility", methods=["GET"])
@@ -129,41 +134,3 @@ async def get_friends_versatility_score_leaderboard(userid):
 
     # publish message to Redis
     return dataclasses.asdict(response)
-
-
-# @api.route("friends/<userid>/value", methods=["GET"])
-# async def get_friends_library_value_leaderboard(userid):
-#     message = RedisMessage(
-#         request.args.get("key"), RedisMessageType.LEADERBOARD_LIBRARY_VALUE.value
-#     )
-
-#     async def set_callback(message: RedisMessage, requests):
-#         for completed in asyncio.as_completed(requests):
-#             result = await completed
-#             message.payload.update({result["data"]["steamid"]: result["data"]["value"]})
-
-#     async with AsyncClient(limits=DEFAULT_API_CLIENT_LIMITS) as session:
-#         friendlist = await get_friend_list(
-#             userid, key=request.args.get("key"), session=session
-#         )
-#         requests = [
-#             get_user_library_value(
-#                 friend["steamid"], key=request.args.get("key"), session=session
-#             )
-#             for friend in friendlist["friends"]
-#         ]
-
-#         await set_payload_from_requests(
-#             message,
-#             requests,
-#             DEFAULT_API_CLIENT_LIMITS.max_connections,
-#             set_callback,
-#         )
-
-#     # publish message to Redis
-#     return dataclasses.asdict(
-#         await get_redis_result(
-#             message,
-#             f"computed{RedisMessageType.LEADERBOARD_LIBRARY_VALUE.value}_{request.args.get('key')}",
-#         )
-#     )  # add channel to kwargs when implementing auth

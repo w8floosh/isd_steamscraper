@@ -1,0 +1,1 @@
+REDIS_HOST=192.168.56.2 REDIS_PORT=6379 quart run --certfile certificates/server_cert.crt --keyfile certificates/server_key.key -p 443

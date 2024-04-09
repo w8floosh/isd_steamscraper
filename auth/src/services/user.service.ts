@@ -34,7 +34,7 @@ export class UserService implements OAuthUserRepository {
       `*${identifier}*`,
     );
     console.log(identifier, user);
-    if (user[1]) {
+    if (user[1][1]) {
       console.log(user[1][1]);
       const parsed = User.fromJSON(user[1][1]);
       let passwordMatches: boolean;

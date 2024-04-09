@@ -7,13 +7,14 @@ export interface IAppMetadata {
 }
 
 export interface IPlayerMetadata {
-  id: number;
+  id: string;
   name?: string;
   friendSince?: Date;
 }
 
 export interface IAchievementMetadata {
   appName: string;
+  apiName: string;
   name: string;
   unlockTime: Date;
 }

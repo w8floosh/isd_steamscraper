@@ -1,4 +1,5 @@
 import {
+  AllPlayerAchievementsResponse,
   FriendListResponse,
   OwnedGamesResponse,
   PlayerAchievementsResponse,
@@ -12,7 +13,7 @@ export const useUserService = () => {
   const loading = ref(false);
 
   async function getOwnedGames(
-    userId: number,
+    userId: string,
     include_appinfo?: boolean,
     include_played_free_games?: boolean,
     appids_filter?: string
@@ -27,7 +28,6 @@ export const useUserService = () => {
       );
       return response.data;
     } catch (error) {
-      console.error('Error retrieving owned games:', error);
       throw error;
     } finally {
       loading.value = false;
@@ -35,14 +35,13 @@ export const useUserService = () => {
   }
 
   async function getRecentlyPlayed(
-    userId: number
+    userId: string
   ): Promise<RecentlyPlayedResponse> {
     loading.value = true;
     try {
       const response = await userClient.getRecentlyPlayed(userId);
       return response.data;
     } catch (error) {
-      console.error('Error retrieving recently played games:', error);
       throw error;
     } finally {
       loading.value = false;
@@ -50,27 +49,25 @@ export const useUserService = () => {
   }
 
   async function getPlayerSummary(
-    userId: number
+    userId: string
   ): Promise<PlayerSummaryResponse> {
     loading.value = true;
     try {
       const response = await userClient.getPlayerSummary(userId);
       return response.data;
     } catch (error) {
-      console.error('Error retrieving friends list:', error);
       throw error;
     } finally {
       loading.value = false;
     }
   }
 
-  async function getFriendsList(userId: number): Promise<FriendListResponse> {
+  async function getFriendsList(userId: string): Promise<FriendListResponse> {
     loading.value = true;
     try {
       const response = await userClient.getFriendsList(userId);
       return response.data;
     } catch (error) {
-      console.error('Error retrieving friends list:', error);
       throw error;
     } finally {
       loading.value = false;
@@ -78,7 +75,7 @@ export const useUserService = () => {
   }
 
   async function getPlayerAchievements(
-    userId: number,
+    userId: string,
     appid: number
   ): Promise<PlayerAchievementsResponse> {
     loading.value = true;
@@ -86,7 +83,24 @@ export const useUserService = () => {
       const response = await userClient.getPlayerAchievements(userId, appid);
       return response.data;
     } catch (error) {
-      console.error('Error retrieving player achievements:', error);
+      throw error;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function getAllPlayerAchievements(
+    userId: string,
+    appids: number[]
+  ): Promise<AllPlayerAchievementsResponse> {
+    loading.value = true;
+    try {
+      const response = await userClient.getAllPlayerAchievements(
+        userId,
+        appids
+      );
+      return response.data;
+    } catch (error) {
       throw error;
     } finally {
       loading.value = false;
@@ -98,6 +112,7 @@ export const useUserService = () => {
     getPlayerSummary,
     getFriendsList,
     getPlayerAchievements,
+    getAllPlayerAchievements,
     getRecentlyPlayed,
   };
 };

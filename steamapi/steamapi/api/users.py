@@ -133,14 +133,11 @@ async def get_owned_games(userid, **kwargs):
     )
     try:
         games = result.data["response"]["games"]
-        games = [
-            clean_obj(game, clean_mode="pop", entries=["img_icon_url"])
-            for game in games
-        ]
+
         games_dict = dict()
         for game in games:
             id = game.pop("appid")
-            games_dict.update({id: game})
+            games_dict.update({str(id): game})
 
         result.data = games_dict
     except:

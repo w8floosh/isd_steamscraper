@@ -59,12 +59,14 @@ async def set_payload_from_requests(
 ):
     nreq = len(requests)
     if not batch_size:
-        return await do(message, requests, *args)
+        await do(message, requests, *args)
+        return message
 
     for batch in range(ceil(nreq / batch_size)):
         batch_start = batch * batch_size
         batch_end = min((batch + 1) * batch_size, nreq)
         await do(message, requests[batch_start:batch_end], *args)
+    return message
 
 
 def build_url(interface: APIType, call: str, version="0002", key="", *route, **kwargs):

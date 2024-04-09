@@ -1,10 +1,12 @@
 import { api as axios } from 'src/boot/axios';
 import {
+  AllPlayerAchievementsResponse,
   FriendListResponse,
   ISteamAPIResponse,
   OwnedGamesResponse,
   PlayerAchievementsResponse,
   RecentlyPlayedResponse,
+  SteamAPIError,
 } from './responses';
 import { useAuthStore } from 'src/stores/auth';
 import { storeToRefs } from 'pinia';
@@ -14,7 +16,7 @@ export default new (class UserClient {
   private base_url = process.env.STEAMAPI_PROXY_URL + '/users';
   private ach_url = process.env.STEAMAPI_PROXY_URL + '/stats/players';
   async getOwnedGames(
-    userId: number,
+    userId: string,
     include_appinfo?: boolean,
     include_played_free_games?: boolean,
     appids_filter?: string
@@ -32,6 +34,10 @@ export default new (class UserClient {
         url,
         { params }
       );
+      if (response.data.errors.length) {
+        console.error('AH CUNNUTU CA SI', userId);
+        throw new SteamAPIError(response.data.errors.join('\n'));
+      }
       return response.data;
     } catch (error) {
       console.error('Error retrieving owned games:', error);
@@ -40,7 +46,7 @@ export default new (class UserClient {
   }
 
   async getPlayerSummary(
-    userId: number
+    userId: string
   ): Promise<ISteamAPIResponse<PlayerSummaryResponse>> {
     const url = `${this.base_url}/${userId}/summary`;
     const params = {
@@ -51,6 +57,8 @@ export default new (class UserClient {
       const response = await axios.get<
         ISteamAPIResponse<PlayerSummaryResponse>
       >(url, { params });
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error retrieving player summary:', error);
@@ -59,7 +67,7 @@ export default new (class UserClient {
   }
 
   async getRecentlyPlayed(
-    userId: number
+    userId: string
   ): Promise<ISteamAPIResponse<RecentlyPlayedResponse>> {
     const url = `${this.base_url}/${userId}/recent`;
     const params = {
@@ -70,6 +78,8 @@ export default new (class UserClient {
       const response = await axios.get<
         ISteamAPIResponse<RecentlyPlayedResponse>
       >(url, { params });
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error retrieving recently played games:', error);
@@ -78,7 +88,7 @@ export default new (class UserClient {
   }
 
   async getFriendsList(
-    userId: number
+    userId: string
   ): Promise<ISteamAPIResponse<FriendListResponse>> {
     const url = `${this.base_url}/${userId}/friends`;
     const params = {
@@ -90,6 +100,8 @@ export default new (class UserClient {
         url,
         { params }
       );
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error retrieving friends list:', error);
@@ -98,7 +110,7 @@ export default new (class UserClient {
   }
 
   async getPlayerAchievements(
-    userId: number,
+    userId: string,
     appid: number
   ): Promise<ISteamAPIResponse<PlayerAchievementsResponse>> {
     const url = `${this.ach_url}/${userId}/achievements`;
@@ -111,9 +123,33 @@ export default new (class UserClient {
       const response = await axios.get<
         ISteamAPIResponse<PlayerAchievementsResponse>
       >(url, { params });
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error retrieving player achievements:', error);
+      throw error;
+    }
+  }
+
+  async getAllPlayerAchievements(
+    userId: string,
+    appids: number[]
+  ): Promise<ISteamAPIResponse<AllPlayerAchievementsResponse>> {
+    const url = `${this.ach_url}/${userId}/achievements`;
+    const params = {
+      key: storeToRefs(useAuthStore()).steamWebAPIToken.value,
+    };
+
+    try {
+      const response = await axios.post<
+        ISteamAPIResponse<AllPlayerAchievementsResponse>
+      >(url, { appids }, { params });
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
+      return response.data;
+    } catch (error) {
+      console.error('Error retrieving all player achievements:', error);
       throw error;
     }
   }

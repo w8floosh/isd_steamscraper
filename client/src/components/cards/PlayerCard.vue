@@ -1,5 +1,5 @@
 <template>
-    <q-card clickable bordered class="player-card" @click="$router.push(`/players/${id}`)">
+    <q-card clickable bordered class="player-card" @click="$router.push(`/user/${id}`)">
         <!-- id upper left corner -->
         <q-card-section class="player-card-section player-id">
             <span>{{ id }}</span>
@@ -49,7 +49,8 @@ const props = defineProps<ComponentProps>()
     .player-name {
         grid-row: 2;
         grid-column: span 3;
-        place-self: center
+        place-self: center;
+        color: black
     }
 
     .player-friend-since {

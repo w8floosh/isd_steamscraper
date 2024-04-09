@@ -10,7 +10,7 @@ export const useStatsService = () => {
   const loading = ref(false);
   const errorMessage = ref('');
   async function getAchievementScore(
-    userId: number
+    userId: string
   ): Promise<AchievementScoreResponse> {
     try {
       loading.value = true;
@@ -28,7 +28,7 @@ export const useStatsService = () => {
   }
 
   async function getFavoriteGenresAndCategories(
-    userId: number
+    userId: string
   ): Promise<FavoriteGenresCategoriesResponse> {
     try {
       loading.value = true;
@@ -47,7 +47,7 @@ export const useStatsService = () => {
   }
 
   async function getForgottenGames(
-    userId: number
+    userId: string
   ): Promise<ForgottenGamesResponse> {
     try {
       loading.value = true;

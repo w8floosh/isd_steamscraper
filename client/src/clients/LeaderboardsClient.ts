@@ -1,15 +1,14 @@
 import { api as axios } from 'src/boot/axios';
-import { ISteamAPIResponse } from './types';
+import { ISteamAPIResponse, SteamAPIError } from './responses';
 import { useAuthStore } from 'src/stores/auth';
 import { storeToRefs } from 'pinia';
-
 
 export default new (class LeaderboardsClient {
   private base_url =
     process.env.STEAMAPI_PROXY_URL + '/compute/stats/leaderboards/friends';
 
   async getAchievementScoreFriendsLeaderboard(
-    userId: number
+    userId: string
   ): Promise<ISteamAPIResponse> {
     const url = `${this.base_url}/${userId}/gamerscore`;
     const params = {
@@ -18,6 +17,8 @@ export default new (class LeaderboardsClient {
 
     try {
       const response = await axios.get<ISteamAPIResponse>(url, { params });
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error(
@@ -29,7 +30,7 @@ export default new (class LeaderboardsClient {
   }
 
   async getPlaytimeFriendsLeaderboard(
-    userId: number
+    userId: string
   ): Promise<ISteamAPIResponse> {
     const url = `${this.base_url}/${userId}/playtime`;
     const params = {
@@ -38,6 +39,8 @@ export default new (class LeaderboardsClient {
 
     try {
       const response = await axios.get<ISteamAPIResponse>(url, { params });
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error retrieving playtime friends leaderboard:', error);
@@ -46,7 +49,7 @@ export default new (class LeaderboardsClient {
   }
 
   async getVersatilityScoreFriendsLeaderboard(
-    userId: number
+    userId: string
   ): Promise<ISteamAPIResponse> {
     const url = `${this.base_url}/${userId}/versatility`;
     const params = {
@@ -55,6 +58,8 @@ export default new (class LeaderboardsClient {
 
     try {
       const response = await axios.get<ISteamAPIResponse>(url, { params });
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error(

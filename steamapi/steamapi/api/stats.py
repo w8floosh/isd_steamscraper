@@ -1,12 +1,16 @@
+import asyncio
 import dataclasses
+import json
+from sys import stderr
 from quart import Blueprint, request
 from httpx import AsyncClient
 
 from ..broker import broker
 from ..broker.types import RedisCacheKeyPattern
 from ..broker.cache import cached
-from ..api.types import SteamWebAPI
-from ..api.utils import build_url, prepare_response
+from ..api.types import DEFAULT_API_CLIENT_LIMITS, SteamAPIResponse, SteamWebAPI
+from ..api.utils import build_url, prepare_response, set_payload_from_requests
+from ..api.users import get_owned_games
 
 api = Blueprint("stats", __name__, url_prefix="/stats")
 _players = Blueprint("players", __name__, url_prefix="/players")
@@ -64,7 +68,7 @@ async def get_no_current_players(id, **kwargs):
 
 @_players.route("/<player>/achievements", methods=["GET"])
 @broker.ping(skip_on_failure=True)
-@cached(RedisCacheKeyPattern.USER_DATA, ["player"], ["achievements"])
+@cached(RedisCacheKeyPattern.USER_DATA, ["player"], ["achievements"], ["appid"])
 async def get_player_achievements(player, **kwargs):
     injected_client = kwargs.get("session")
     client = injected_client or AsyncClient()
@@ -86,16 +90,64 @@ async def get_player_achievements(player, **kwargs):
     if result.success:
         achievements = result.data["playerstats"].get("achievements")
         if not achievements:
-            achievements = {}
             result.success = "with_warnings"
-            result.errors.append("No achievements unlocked")
-        result.data.update({id: achievements})
+            result.errors.append("No achievements available or unlocked")
+        else:
+            achievements = [ach for ach in achievements if ach.get("achieved") == 1]
+            result.data.update({id: achievements})
         result.data.pop("playerstats")
 
     if injected_client is None:
         await client.aclose()
 
-    return dataclasses.asdict(result)
+    print(
+        "DATACLASS->DICT\n", dataclasses.asdict(result), "\n__DICT__\n", result.__dict__
+    )
+    result = dataclasses.asdict(result)
+    return result
+
+
+@_players.route("/<player>/achievements", methods=["POST"])
+@broker.ping(skip_on_failure=True)
+async def get_player_achievements_from_appid_list(player, **kwargs):
+    async def set_callback(message: dict, requests):
+        responses = await asyncio.gather(*requests)
+        for result in responses:
+            if result.get("success"):
+                data: dict = result.get("data")
+                if data:
+                    appid = list(data.keys())[0]
+                    message.update({appid: data.pop(appid)})
+
+    body = json.loads(await request.get_data(as_text=True))
+    if not body["appids"]:
+        return dataclasses.asdict(
+            SteamAPIResponse(False, {}, ["No app IDs were specified"])
+        )
+
+    print(body["appids"])
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient()
+
+    requests = [
+        get_player_achievements(
+            player,
+            key=request.args.get("key"),
+            appid=game,
+            session=client,
+            custom_req_data={"appid": game},
+        )
+        for game in body["appids"]
+    ]
+
+    result = await set_payload_from_requests(
+        dict(), requests, set_callback, DEFAULT_API_CLIENT_LIMITS.max_connections
+    )
+
+    if injected_client is None:
+        await client.aclose()
+
+    return dataclasses.asdict(SteamAPIResponse(True, result))
 
 
 api.register_blueprint(_players)

@@ -1,3 +1,4 @@
+import { Category, Genre } from 'src/clients/entities';
 import {
   IAchievementMetadata,
   IAppMetadata,
@@ -8,10 +9,12 @@ import {
 export interface IUser {
   email: string;
   username: string;
-  lastLoginAt: number;
-  lastLoginIP: string;
+  accessToken: string;
   steamWebAPIToken: string;
-  steamId: number;
+  steamId: string;
+  avatarURL?: string;
+  lastLoginAt?: Date;
+  lastLoginIP?: string;
 }
 
 export type UserCredentials = {
@@ -67,5 +70,8 @@ export type UserData = {
   games?: IAppMetadata[];
   achievements?: IAchievementMetadata[];
   forgotten?: IAppMetadata[];
-  favorite: { genres?: any[]; categories?: any[] };
+  favorite: {
+    genres?: Genre[];
+    categories?: Category[];
+  };
 };
