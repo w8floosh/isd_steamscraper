@@ -7,15 +7,16 @@ from typing import List
 from quart import request
 
 from ..api.types import SteamAPIResponse
-from .utils import build_json_path
+from .utils import build_json_path, extract_resolve_args
 from .types import RedisCacheKeyPattern, RedisCacheTTL
 from . import broker
 
 
 def cached(
     pattern: RedisCacheKeyPattern,
-    pattern_args: List = [],
-    readpath: List = [],
+    pattern_args: List,
+    readpath: List,
+    readpath_args: List = [],
     keys_only=False,
     ttl=RedisCacheTTL.LONGEST,
 ):
@@ -40,58 +41,49 @@ def cached(
         @wraps(func)
         async def wrapper(*args, **kwargs):
             # vv Does not work? vv
-            json_key = pattern.resolve(
-                [].extend(
-                    [
-                        *[
-                            value
-                            for kwarg, value in kwargs.items()
-                            if kwarg in pattern_args
-                        ],
-                        *[
-                            value
-                            for rarg, value in request.args.items()
-                            if rarg in pattern_args
-                        ],
-                        *[
-                            value
-                            for varg, value in request.view_args.items()
-                            if varg in pattern_args
-                        ],
-                    ]
-                )
+            resolve_args = extract_resolve_args(
+                pattern_args, kwargs, request.args, request.view_args
             )
-
-            json_path = build_json_path(*readpath)
+            resolve_readpath_args = extract_resolve_args(
+                readpath_args, kwargs, request.args, request.view_args
+            )
+            json_key = pattern.resolve(resolve_args)
+            json_path = build_json_path(readpath)
+            json_path_with_args = build_json_path(readpath, resolve_readpath_args)
             # 3. want to renew the cache
             renew = request.args.get("renew", kwargs.get("renew", False))
             # add continuous renew protection
-            if renew and (
-                int(await broker.connection.object("IDLETIME", json_key)) < 30
-            ):
-                result: dict = await func(*args, **kwargs)
-                await write_cache(
-                    json_key,
-                    result.get("data"),
-                    ttl,
-                    json_path,
-                )
-                return result
+            if renew:
+                idletime = await broker.connection.object("IDLETIME", json_key)
+                # print("idletime for key ", json_key, " is ", idletime, file=stderr)
+                if idletime is None or idletime > 30:
+                    result: dict = await func(*args, **kwargs)
+                    if result["success"]:
+                        await write_cache(
+                            json_key,
+                            result.get("data"),
+                            json_path,
+                            ttl,
+                        )
+                    return result
 
             data: dict = {}
 
             if keys_only:
-                data = await broker.connection.json().objkeys(json_key, json_path)
+                data = await broker.connection.json().objkeys(
+                    json_key, json_path_with_args
+                )
             else:
                 data = await broker.connection.json().get(
                     json_key,
-                    json_path,
+                    json_path_with_args,
                     no_escape=True,
                 )
-            print(
-                ("loaded cache" if data else "requesting data from the Web"),
-                file=stderr,
-            )
+            print(json_key, json_path, json_path_with_args, file=stderr)
+            # print(
+            #     ("loaded cache" if data else "requesting data from the Web"),
+            #     file=stderr,
+            # )
 
             # 2. data is already cached
             if data:
@@ -102,17 +94,23 @@ def cached(
                 else:
                     data = data[0]
 
+                if wrapper.__name__ == "get_player_achievements":
+                    # @TODO temporary bugfix for achievements tab
+                    data = dict({kwargs.get("appid"): data})
+
                 return dataclasses.asdict(SteamAPIResponse(True, data, cached=True))
 
             # 1. data is not cached yet
             else:
                 result: dict = await func(*args, **kwargs)
-                await write_cache(
-                    json_key,
-                    result.get("data"),
-                    ttl,
-                    json_path,
-                )
+                if result["success"]:
+                    # print(result.get("data"), file=stderr)
+                    await write_cache(
+                        json_key,
+                        result.get("data"),
+                        json_path,
+                        ttl,
+                    )
                 return result
 
         return wrapper
@@ -120,13 +118,17 @@ def cached(
     return decorator
 
 
-async def write_cache(key, value, path=None, ttl=RedisCacheTTL.SHORT):
+async def write_cache(key, value, path: str, ttl):
     from . import broker
 
     await broker.connection.json().set(key, "$", {}, nx=True)
     if path:
-        await broker.connection.json().set(key, path, {}, nx=True)
-    await broker.connection.json().merge(key, "$", value)
+        # print(path, file=stderr)
+        currentpath = ""
+        for level in path.split(".")[1:]:
+            currentpath = ".".join([currentpath, level])
+            await broker.connection.json().set(key, currentpath, {}, nx=True)
+    await broker.connection.json().merge(key, path or "$", value)
 
     if ttl is not RedisCacheTTL.FOREVER:
         await broker.connection.expire(key, ttl.value)

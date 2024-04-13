@@ -1,31 +1,41 @@
 import { api as axios } from 'src/boot/axios';
-import { ISteamAPIResponse } from './types';
+import {
+  AppDetailsResponse,
+  AppGlobalAchievementPercentagesResponse,
+  AppListResponse,
+  AppNewsResponse,
+  ISteamAPIResponse,
+  NoCurrentPlayersResponse,
+  SteamAPIError,
+} from './responses';
 import { useAuthStore } from 'src/stores/auth';
-import { IAppMetadata } from 'src/components/models';
 import { storeToRefs } from 'pinia';
 
-const { steamWebAPIToken: token } = storeToRefs(useAuthStore());
-
 export default new (class AppsClient {
-  private endpoint_apps = '/stats/apps';
+  private endpoint_apps = '/stats/apps/';
   private endpoint_store = '/store';
+  private endpoint_news = '/news/';
 
-  private endpoint_news = '/news';
   async getAppList(
     max_results?: number,
     last_appid?: string
-  ): Promise<ISteamAPIResponse<IAppMetadata>> {
+  ): Promise<ISteamAPIResponse<AppListResponse>> {
     const url = process.env.STEAMAPI_PROXY_URL + this.endpoint_store;
     const params = {
       max_results,
       last_appid,
-      token,
+      key: storeToRefs(useAuthStore()).steamWebAPIToken.value,
     };
 
     try {
-      const response = await axios.get<ISteamAPIResponse<IAppMetadata>>(url, {
-        params,
-      });
+      const response = await axios.get<ISteamAPIResponse<AppListResponse>>(
+        url,
+        {
+          params,
+        }
+      );
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error getting app list:', error);
@@ -34,22 +44,26 @@ export default new (class AppsClient {
   }
 
   async getNews(
-    id: string,
+    appid: number,
     count?: number,
     maxlength?: number
-  ): Promise<ISteamAPIResponse> {
-    const url = process.env.STEAMAPI_PROXY_URL + this.endpoint_news;
+  ): Promise<ISteamAPIResponse<AppNewsResponse>> {
+    const url = process.env.STEAMAPI_PROXY_URL + this.endpoint_news + appid;
     const params = {
-      id,
       count,
       maxlength,
-      token,
+      key: storeToRefs(useAuthStore()).steamWebAPIToken.value,
     };
 
     try {
-      const response = await axios.get<ISteamAPIResponse>(url, {
-        params,
-      });
+      const response = await axios.get<ISteamAPIResponse<AppNewsResponse>>(
+        url,
+        {
+          params,
+        }
+      );
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error getting app news:', error);
@@ -58,25 +72,32 @@ export default new (class AppsClient {
   }
 
   async getDetails(
-    id: string,
+    appid: number,
     filters?: string,
     cc?: string,
     language?: string
-  ): Promise<ISteamAPIResponse> {
+  ): Promise<ISteamAPIResponse<AppDetailsResponse>> {
     const url =
-      process.env.STEAMAPI_PROXY_URL + this.endpoint_store + '/details';
+      process.env.STEAMAPI_PROXY_URL +
+      this.endpoint_store +
+      '/details/' +
+      appid;
     const params = {
-      id,
       filters,
       cc,
       language,
-      token,
+      key: storeToRefs(useAuthStore()).steamWebAPIToken.value,
     };
 
     try {
-      const response = await axios.get<ISteamAPIResponse>(url, {
-        params,
-      });
+      const response = await axios.get<ISteamAPIResponse<AppDetailsResponse>>(
+        url,
+        {
+          params,
+        }
+      );
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error getting app details:', error);
@@ -85,21 +106,25 @@ export default new (class AppsClient {
   }
 
   async getAppGlobalAchievementPercentages(
-    gameid: string
-  ): Promise<ISteamAPIResponse> {
+    gameid: number
+  ): Promise<ISteamAPIResponse<AppGlobalAchievementPercentagesResponse>> {
     const url =
       process.env.STEAMAPI_PROXY_URL +
       this.endpoint_apps +
       gameid +
       '/achievements';
     const params = {
-      token,
+      key: storeToRefs(useAuthStore()).steamWebAPIToken.value,
     };
 
     try {
-      const response = await axios.get<ISteamAPIResponse>(url, {
+      const response = await axios.get<
+        ISteamAPIResponse<AppGlobalAchievementPercentagesResponse>
+      >(url, {
         params,
       });
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error getting app global achievement percentages:', error);
@@ -107,17 +132,23 @@ export default new (class AppsClient {
     }
   }
 
-  async getCurrentPlayers(id: string): Promise<ISteamAPIResponse> {
+  async getCurrentPlayers(
+    appid: number
+  ): Promise<ISteamAPIResponse<NoCurrentPlayersResponse>> {
     const url =
-      process.env.STEAMAPI_PROXY_URL + this.endpoint_apps + id + '/current';
+      process.env.STEAMAPI_PROXY_URL + this.endpoint_apps + appid + '/current';
     const params = {
-      token,
+      key: storeToRefs(useAuthStore()).steamWebAPIToken.value,
     };
 
     try {
-      const response = await axios.get<ISteamAPIResponse>(url, {
+      const response = await axios.get<
+        ISteamAPIResponse<NoCurrentPlayersResponse>
+      >(url, {
         params,
       });
+      if (response.data.errors.length)
+        throw new SteamAPIError(response.data.errors.join('\n'));
       return response.data;
     } catch (error) {
       console.error('Error getting app current players:', error);

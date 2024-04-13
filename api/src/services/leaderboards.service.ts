@@ -35,6 +35,7 @@ export class LeaderboardsService extends APIService {
   private getAchievementsScoreLeaderboard(data: RedisMessageParsed) {
     const reply = new RedisMessage(data.consumer, data.requester, data.type);
     try {
+      console.log(data.payload);
       const user_data = data.payload as Array<{
         steamid: string;
         score: number;
@@ -50,22 +51,21 @@ export class LeaderboardsService extends APIService {
   private getVersatilityScoreLeaderboard(data: RedisMessageParsed) {
     const reply = new RedisMessage(data.consumer, data.requester, data.type);
     try {
-      const user_data = data.payload as Array<{
-        steamid: string;
-        games: Record<string, { playtime_forever: number; [key: string]: any }>;
-      }>;
-      reply.payload.data = user_data
-        .map((x) => {
-          const stddev = standardDeviation(
-            Object.values(x.games).map((game) => game.playtime_forever),
-          );
+      const user_data = Object.entries<Record<string, number>>(data.payload);
 
-          return {
-            steamid: x.steamid,
-            score: stddev !== 0 ? 1 / stddev : 0,
-          };
-        })
-        .sort((l, r) => r.score - l.score);
+      reply.payload.data = user_data
+        .reduce((acc, [steamid, games]) => {
+          if (!Object.keys(games || {}).length) return acc;
+          const score = standardDeviation(Object.values(games));
+
+          if (score === undefined || isNaN(score) || score === 0) return acc;
+          acc.push({
+            steamid,
+            score,
+          });
+          return acc;
+        }, [])
+        .sort((l, r) => l.score - r.score);
     } catch (e) {
       reply.payload.success = false;
       reply.payload.errors.push(e);
@@ -81,17 +81,18 @@ export class LeaderboardsService extends APIService {
       //   games: Record<number, number>;
       // }>;
       reply.payload.data = user_data
-        .map(([steamid, games]) => {
+        .reduce((acc, [steamid, games]) => {
           const score = Object.values(games).reduce(
             (total, playtime) => total + playtime,
             0,
           );
-
-          return {
+          if (score === 0) return acc;
+          acc.push({
             steamid,
             score,
-          };
-        })
+          });
+          return acc;
+        }, [])
         .sort((l, r) => r.score - l.score);
     } catch (e) {
       reply.payload.success = false;

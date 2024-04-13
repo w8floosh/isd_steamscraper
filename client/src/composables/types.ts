@@ -1,15 +1,28 @@
+import { Category, Genre } from 'src/clients/entities';
+import {
+  IAchievementMetadata,
+  IAppMetadata,
+  IPlayerMetadata,
+  IRecentlyPlayedGameMetadata,
+  ILeaderboardsData,
+} from 'src/components/models';
+
 export interface IUser {
   email: string;
   username: string;
-  lastLoginAt: number;
-  lastLoginIP: string;
+  accessToken: string;
   steamWebAPIToken: string;
+  steamId: string;
+  avatarURL?: string;
+  lastLoginAt?: Date;
+  lastLoginIP?: string;
 }
 
 export type UserCredentials = {
   email: string;
   password: string;
   steamWebAPIToken?: string;
+  steamId?: string;
 };
 
 export type GetAppDataOptions = {
@@ -48,3 +61,19 @@ export enum AuthenticationError {
   EXPIRED_SESSION = 'Session expired',
   GENERIC = 'Generic error',
 }
+
+export type UserTab = 'games' | 'friends' | 'favorites' | 'achievements';
+export type UserGamesTab = 'forgottenGames' | 'allGames' | 'recentGames';
+export type LeaderboardsTab = keyof ILeaderboardsData;
+
+export type UserData = {
+  recent?: IRecentlyPlayedGameMetadata[];
+  friends?: IPlayerMetadata[];
+  games?: IAppMetadata[];
+  achievements?: IAchievementMetadata[];
+  forgotten?: IAppMetadata[];
+  favorite: {
+    genres?: Genre[];
+    categories?: Category[];
+  };
+};

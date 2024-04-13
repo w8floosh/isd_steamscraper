@@ -1,4 +1,4 @@
-import { IDrawerOption } from '../components/models';
+import { IDrawerOption } from 'src/components/models';
 
 export const useDrawerOptions = () => {
   const publicDrawerOptions: IDrawerOption[] = [
@@ -21,12 +21,6 @@ export const useDrawerOptions = () => {
       caption: 'Get all details and news about a game/app',
       icon: 'sports_esports',
       endpoint: '/apps',
-    },
-    {
-      title: 'Friends',
-      caption: 'Show your friend list',
-      icon: 'group',
-      endpoint: '/friends',
     },
     {
       title: 'Leaderboards',

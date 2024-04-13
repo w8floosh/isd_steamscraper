@@ -2,11 +2,24 @@ import { ref } from 'vue';
 import appsClient from '../clients/AppsClient';
 import { IAppData, IAppMetadata } from 'src/components/models';
 import { GetAppDataOptions } from './types';
+import { AppListResponse, SteamAPIError } from 'src/clients/responses';
 
 export const useAppsService = () => {
   const loading = ref(false);
-
-  async function getAppList(): Promise<Record<string, IAppMetadata>> {
+  const errors = ref({
+    details: '',
+    news: '',
+    players: '',
+    achievements: '',
+  });
+  const handleAppDataError = (
+    key: keyof typeof errors.value,
+    error: SteamAPIError
+  ) => {
+    errors.value[key] = error.message;
+    return undefined;
+  };
+  async function getAppList(): Promise<AppListResponse> {
     try {
       loading.value = true;
 
@@ -25,49 +38,60 @@ export const useAppsService = () => {
     meta: IAppMetadata,
     options?: GetAppDataOptions
   ): Promise<IAppData> {
-    try {
-      loading.value = true;
-      const { filters, cc, language } = options?.details || {};
-      const { count, maxlength } = options?.news || {};
-      const [
-        detailsResponse,
-        newsResponse,
-        playersResponse,
-        achievementsResponse,
-      ] = await Promise.all([
-        appsClient.getDetails(meta.id, filters, cc, language),
-        appsClient.getNews(meta.id, count, maxlength),
-        appsClient.getCurrentPlayers(meta.id),
-        appsClient.getAppGlobalAchievementPercentages(meta.id),
-      ]);
+    loading.value = true;
+    const { filters, cc, language } = options?.details || {};
+    const { count, maxlength } = options?.news || {};
+    const [
+      detailsResponse,
+      newsResponse,
+      playersResponse,
+      achievementsResponse,
+    ] = await Promise.all([
+      appsClient
+        .getDetails(meta.id, filters, cc, language)
+        .catch((e) => handleAppDataError('details', e)),
+      appsClient
+        .getNews(meta.id, count, maxlength)
+        .catch((e) => handleAppDataError('news', e)),
+      appsClient
+        .getCurrentPlayers(meta.id)
+        .catch((e) => handleAppDataError('players', e)),
+      appsClient
+        .getAppGlobalAchievementPercentages(meta.id)
+        .catch((e) => handleAppDataError('achievements', e)),
+    ]);
 
-      // Extract relevant data
-      const details = detailsResponse.data;
-      const news = Object.values(newsResponse.data);
-      const players = Object.values(playersResponse.data)[0] as number;
-      const achievements = Object.values(
-        achievementsResponse.data
-      )[0] as number;
+    // Extract relevant data
+    const details = detailsResponse?.data[meta.id.toString()];
+    const news = newsResponse ? Object.values(newsResponse.data) : undefined;
+    const players = playersResponse
+      ? Object.values(playersResponse.data)[0]
+      : undefined;
+    const achievements = achievementsResponse
+      ? Object.entries(Object.values(achievementsResponse?.data)[0]).map(
+          ([ach, percent]: [string, number]) => ({
+            appName: meta.name,
+            apiName: ach,
+            name: ach,
+            globalCompletionPercentage: percent,
+          })
+        )
+      : undefined;
 
-      return {
-        meta,
-        details,
-        news,
-        players,
-        achievements,
-      };
-    } catch (error) {
-      // Handle error
-      console.error(error);
-      throw new Error('Failed to retrieve app data');
-    } finally {
-      loading.value = false;
-    }
+    loading.value = false;
+    return {
+      meta,
+      details,
+      news,
+      players,
+      achievements,
+    };
   }
 
   return {
     getAppData,
     getAppList,
     loading,
+    errors,
   };
 };

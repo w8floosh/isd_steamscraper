@@ -19,18 +19,19 @@
           >
           
             <q-avatar dense color="black">
-              {{ user.name[0].toUpperCase() }}
+              {{ user.username[0].toUpperCase() }}
             </q-avatar>
-            {{ user.name }}
-            <q-btn label="logout" @click="signout" />
+            {{ user.username }}
+            <q-btn label="logout" @click="signOut" />
 
           </q-chip>
           <q-btn-group  v-else>
-            <q-btn label="login" @click="switchLoginDialog" />
-            <q-btn label="register" @click="switchRegisterDialog" />
+            <q-btn label="login" @click="openLoginDialog" />
+            <q-btn label="register" @click="openRegisterDialog" />
           </q-btn-group>
       </q-toolbar>
       <q-toolbar inset>
+        {{ auth }}
         <q-breadcrumbs>
           <q-breadcrumbs-el v-for="page in breadcrumbs" :key="page.name" :label="page.name" :icon="page.icon" separator/>
         </q-breadcrumbs>
@@ -46,24 +47,38 @@
     </q-drawer>
 
     <q-page-container>
-      <router-view/>
+      <router-view @error="handleComponentError"/>
       <CredentialsDialog
         v-if="credentialsDialogOpened"
         v-model="credentialsDialogOpened"
         :dialogMode="dialogMode"
-        @confirm="signIn"
+        @confirm="sendCredentials"
         @update:model-value="credentialsDialogOpened = false"
       />
-      <!-- @todo <ErrorDialog /> -->
+      <MessagePopup 
+        v-if='messagePopupOpened' 
+        :modelValue="messagePopupOpened" 
+        :title="messagePopupTitle" 
+        :message="messagePopupContent"
+        @confirm="messagePopupOpened = false"
+      />
+      <MessagePopup 
+        v-if="errorDialogOpened" 
+        error
+        :modelValue="errorDialogOpened" 
+        title="Error" 
+        :message="errorDialogMessage" 
+        @confirm="errorDialogOpened = false; $router.push('/')"/>
     </q-page-container>
   </q-layout>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { useAuthStore } from 'stores/auth';
+import { computed, ref } from 'vue';
+import { useAuthStore } from 'src/stores/auth';
 import DrawerOption from 'components/items/DrawerOption.vue';
 import CredentialsDialog from 'components/dialogs/CredentialsDialog.vue';
+import MessagePopup from 'components/dialogs/MessagePopup.vue';
 import { UserCredentials } from 'src/composables/types';
 import { storeToRefs } from 'pinia';
 import { IBreadcrumbs } from 'src/components/models';
@@ -74,7 +89,7 @@ onBeforeRouteLeave((to) => {
   addBreadcrumbs(to)
 })
 
-const { authenticate, resumeSession, signup, signout } = useAuthStore();
+const { authenticate, signup, signout } = useAuthStore();
 const { user, authenticated, loading } = storeToRefs(useAuthStore());
 
 const { publicOptions, restrictedOptions } = useDrawerOptions()
@@ -83,32 +98,72 @@ const route = useRoute();
 const router = useRouter();
 
 
-const props = withDefaults(defineProps<{ auth?: string }>(), {
-  auth: 'false',
+const props = withDefaults(defineProps<{ auth?: boolean }>(), {
+  auth: false,
 });
 
-const credentialsDialogOpened = ref(props.auth == 'true');
+const credentialsDialogOpened = ref(props.auth);
+const messagePopupOpened = ref(false);
 const dialogMode = ref<'login' | 'register'>('login'); 
 const avatarText = ref('');
+const errorDialogOpened = ref(false);
 const errorDialogMessage = ref('')
-// const errorDialogTitle = computed(() => `${dialogMode.value} failed`.toUpperCase())
+const messagePopupTitle = ref('')
+const messagePopupContent = ref('')
 const breadcrumbs = ref<IBreadcrumbs[]>([{name: 'Home', icon: 'home'}])
+
+
+const sendCredentials = async (credentials: UserCredentials) => {
+  return dialogMode.value === 'login' ? signIn(credentials) : signUp(credentials)
+}
 
 const signIn = async (credentials: UserCredentials) => {
   if (!loading.value) {
     const routePath = router.resolve(route.fullPath).href
-    const absoluteURL = new URL(routePath, window.location.origin).href
-    if (dialogMode.value === 'login'){
+    let absoluteURL = new URL(routePath, window.location.origin).href
+    if (absoluteURL.endsWith('/auth')) absoluteURL = absoluteURL.replace('/auth', '/')
+    try {
       await authenticate(credentials, absoluteURL.concat('oauth/redirect'));
-      avatarText.value = user.value.name[0];
+      avatarText.value = user.value.username[0];
       router.push('/oauth/redirect')
     }
-    else {
-      if (!credentials.steamWebAPIToken) errorDialogMessage.value = 'Steam Web API token was not specified'
-      await signup(credentials)
+    catch (e: any) {
+      loading.value = false
+      errorDialogMessage.value = e.response.data.message
+      errorDialogOpened.value = true
     }
   }
 };
+
+const signUp = async (credentials: UserCredentials) => {
+  if (!loading.value) {
+    try {
+      await signup(credentials)
+      messagePopupTitle.value = 'Registration successful'
+      messagePopupContent.value = 'You can now login with your credentials.'
+      messagePopupOpened.value = true
+    }
+    catch (e: any) {
+      loading.value = false
+      errorDialogMessage.value = e.response.data.message
+      errorDialogOpened.value = true
+    }
+  }
+}
+
+const signOut = async () => {
+  if (!loading.value){
+    try {
+      await signout()
+      router.push('/')
+    }
+    catch (e: any) {
+      loading.value = false
+      errorDialogMessage.value = e.response.data.message
+      errorDialogOpened.value = true
+    }
+  }
+}
 
 /* add breadcrumbs data (name and icon) to the breadcrumbs array,
 if the route is a page listed in drawerOptions, delete all breadcrumbs and add the one relative to the page
@@ -131,25 +186,15 @@ function addBreadcrumbs(to: RouteLocation) {
   }
 }
 
-const switchLoginDialog = () => {
-  credentialsDialogOpened.value = !credentialsDialogOpened.value;
+const openLoginDialog = () => {
   dialogMode.value = 'login';
+  credentialsDialogOpened.value = true
 }
 
-const switchRegisterDialog = () => {
-  credentialsDialogOpened.value = !credentialsDialogOpened.value;
+const openRegisterDialog = () => {
   dialogMode.value = 'register';
+  credentialsDialogOpened.value = true
 }
-
-onMounted(async() => {
-  try {
-    await resumeSession()
-  }
-  catch {
-    console.log('No session found')
-    switchLoginDialog()
-  }
-})
 
 const leftDrawerOpen = ref(false);
 
@@ -161,5 +206,11 @@ const links = computed(() =>
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
+}
+
+const handleComponentError = (error: string) => {
+  console.log(error)
+  errorDialogMessage.value = error
+  errorDialogOpened.value = true
 }
 </script>

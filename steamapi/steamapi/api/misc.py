@@ -12,9 +12,9 @@ from ..api.utils import build_url, clean_obj, prepare_response
 news = Blueprint("news", __name__, url_prefix="/news")
 
 
-@news.route("/<id>", methods=["GET"])
+@news.route("/<appid>", methods=["GET"])
 @broker.ping(skip_on_failure=True)
-@cached(RedisCacheKeyPattern.APP_DATA, ["id"], ["news"])
+@cached(RedisCacheKeyPattern.APP_DATA, ["appid"], ["news"])
 async def get_app_news(appid, **kwargs):
     injected_client = kwargs.get("session")
     client = injected_client or AsyncClient()

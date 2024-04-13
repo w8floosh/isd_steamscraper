@@ -7,35 +7,18 @@ import {
 } from '@jmondi/oauth2-server';
 import { RedisService } from './redis.service';
 import { JwtService } from '@jmondi/oauth2-server';
-import { Injectable, OnModuleInit, UseInterceptors } from '@nestjs/common';
+import { Injectable, Logger, UseInterceptors } from '@nestjs/common';
 import { RedisInterceptor } from 'src/controllers/interceptors/redis.interceptor';
 import { AUTHCODES_KEY } from 'src/lib/constants';
 
 @Injectable()
 @UseInterceptors(RedisInterceptor)
-export class AuthcodeService implements OAuthAuthCodeRepository, OnModuleInit {
+export class AuthcodeService implements OAuthAuthCodeRepository {
+  private readonly logger = new Logger(AuthcodeService.name);
   constructor(
     private readonly redisService: RedisService,
     private readonly jwtService: JwtService,
   ) {}
-
-  async onModuleInit() {
-    setInterval(
-      async () => {
-        const keys = await this.redisService.client.hkeys(AUTHCODES_KEY);
-        for (const key of keys) {
-          const code: OAuthAuthCode = JSON.parse(
-            await this.redisService.client.hget(AUTHCODES_KEY, key),
-          );
-
-          if (new Date(code.expiresAt) < new Date()) {
-            await this.redisService.client.hdel(AUTHCODES_KEY, key);
-          }
-        }
-      },
-      1000 * 60 * 5,
-    );
-  }
 
   async getByIdentifier(authcodeCode: string): Promise<OAuthAuthCode> {
     const code = await this.redisService.client.hget(
@@ -45,7 +28,6 @@ export class AuthcodeService implements OAuthAuthCodeRepository, OnModuleInit {
     if (!code) {
       return null;
     }
-    console.log('got code starting with:', authcodeCode.split('.')[0]);
     const parsed = JSON.parse(code) as OAuthAuthCode;
     return parsed;
   }

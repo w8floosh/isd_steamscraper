@@ -37,7 +37,7 @@ def prepare_response(response: Response):
     if response.status_code == 200:
         return SteamAPIResponse(True, response.json())
     else:
-        return SteamAPIResponse(False, {}, [response.status_code])
+        return SteamAPIResponse(False, {}, [response.text])
 
 
 def clean_obj(obj: dict, clean_mode: CleanMode = "take", entries: list = []):
@@ -59,12 +59,14 @@ async def set_payload_from_requests(
 ):
     nreq = len(requests)
     if not batch_size:
-        return await do(message, requests, *args)
+        await do(message, requests, *args)
+        return message
 
     for batch in range(ceil(nreq / batch_size)):
         batch_start = batch * batch_size
         batch_end = min((batch + 1) * batch_size, nreq)
         await do(message, requests[batch_start:batch_end], *args)
+    return message
 
 
 def build_url(interface: APIType, call: str, version="0002", key="", *route, **kwargs):

@@ -1,8 +1,8 @@
 <template>
-    <q-virtual-scroll :items="apps" v-slot="{index: id, item: app}" separator>
-        <AppCard :key="id" 
-            :id="app.id" 
-            :name="app.name" 
+    <q-virtual-scroll class="app-card-list" :items="apps" v-slot="{index: id, item: app}" separator>
+        <AppCard :key="id"
+            :id="app.id"
+            :name="app.name"
             :lastUpdate="app.lastUpdate" 
         />
     </q-virtual-scroll>
@@ -10,10 +10,7 @@
 
 <style scoped>
     .app-card-list {
-        display: flex;
-        gap: 4px;
-        flex-direction: column;
-        justify-content: space-between;
+        max-height: calc(100vh - 300px);
     }
 </style>
 

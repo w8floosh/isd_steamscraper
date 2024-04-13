@@ -16,8 +16,8 @@ services:
       - client/.env.prod
     depends_on:
     - auth
-    # - api
-    # - steamapi
+    - api
+    - steamapi
     - nginx
     - redis
     networks:
@@ -52,31 +52,31 @@ services:
     networks:
       - lbnet
   
-  # api:
-  #   build: ./api
-  #   restart: always
-  #   ports: 
-  #     - "3001:3001"
-  #   container_name: api
-  #   depends_on:
-  #     - nginx
-  #     - redis
-  #   networks:
-  #     - lbnet
+  api:
+    build: ./api
+    restart: always
+    ports: 
+      - "3001:3001"
+    container_name: api
+    depends_on:
+      - nginx
+      - redis
+    networks:
+      - lbnet
 
-  # steamapi:
-  #   build: ./steamapi
-  #   restart: always
-  #   ports: 
-  #     - "3002:3002"
-  #   env_file:
-  #     - ./steamapi/.env.prod
-  #   container_name: steamapi
-  #   depends_on:
-  #     # - api
-  #     - nginx
-  #   networks:
-  #     - lbnet
+  steamapi:
+    build: ./steamapi
+    restart: always
+    ports: 
+      - "3002:3002"
+    env_file:
+      - ./steamapi/.env.prod
+    container_name: steamapi
+    depends_on:
+      - api
+      - nginx
+    networks:
+      - lbnet
       
   redis:
     build: ./redis

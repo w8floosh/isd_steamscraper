@@ -3,6 +3,7 @@ from enum import Enum
 from functools import wraps
 from hashlib import sha256
 from os import getenv
+from sys import stderr
 from uuid import getnode
 from redis.asyncio import StrictRedis, from_url, ConnectionError
 from datetime import datetime, UTC
@@ -30,13 +31,18 @@ class RedisCacheKeyPattern(Enum):
     COMPUTED_DATA = "computed*[0-9]"
 
     def resolve(self, args):
+        print("ARGS", args, file=stderr)
         result = self.value
         for arg in args:
             try:
+                print("APP: ", arg, file=stderr)
                 if int(arg):
-                    result = result.replace("*[0-9]", arg)
-            except:
+                    result = result.replace("*[0-9]", str(arg))
+            except Exception as e:
+                print("CATCH", e, file=stderr)
                 continue
+        if result == "app*[0-9]":
+            print("PANIC!", args, file=stderr)
         return result
 
 

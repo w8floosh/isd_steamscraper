@@ -26,8 +26,8 @@ import { hash } from 'bcrypt';
 import { SALT_ROUNDS } from '../lib/constants';
 import {
   ExpiredTokenException,
-  InvalidCredentialsException,
   InvalidSessionTokenException,
+  UserNotFoundException,
 } from '../lib/errors';
 import { ClientService } from '../services/client.service';
 import { RedisInterceptor } from './interceptors/redis.interceptor';
@@ -70,7 +70,7 @@ export class LoginController {
       authRequest.client,
     );
 
-    if (!userAccount) throw new InvalidCredentialsException();
+    if (!userAccount) throw new UserNotFoundException(email);
 
     const updatedUser = User.create({
       ...userAccount,
@@ -102,6 +102,7 @@ export class LoginController {
   @Get('/verify')
   async verifyToken(
     @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
     @Cookies('session') sessionCookie: string,
   ): Promise<SessionVerificationResponse> {
     let session: SessionCookie;
@@ -116,9 +117,10 @@ export class LoginController {
       const refreshToken = (await this.jwtService.verify(
         session.tokenData.refresh_token,
       )) as any as OAuthToken;
-      if (this.tokenService.isRefreshTokenRevoked(refreshToken))
+      if (this.tokenService.isRefreshTokenRevoked(refreshToken)) {
+        response.clearCookie('session');
         throw new ExpiredTokenException('access'); // unauthorized 401, need to issue a new token pair
-      else
+      } else
         return {
           // refresh token to send to /oauth/token with refresh_token grant
           user: await this.userService.getUserByCredentials(session.user),
@@ -144,13 +146,15 @@ export class LoginController {
     @Req() request: Request,
     @Body() credentials: UserCredentialsDto,
   ): Promise<void> {
-    const { email, password, steamWebAPIToken } = credentials;
+    const { email, password, steamWebAPIToken, steamId } = credentials;
+    console.log(credentials);
     await this.userService.registerUser(
       User.create({
         id: email.concat(await hash(email, SALT_ROUNDS)),
         email,
         username: email,
         steamWebAPIToken,
+        steamId,
         passwordHash: await hash(password, SALT_ROUNDS),
         createdAt: new Date().getTime() * 1000,
         createdIP: request.ip.split(':').pop(),

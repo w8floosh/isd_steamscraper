@@ -1,5 +1,6 @@
 import dataclasses
 import json
+from sys import stderr
 from quart import Blueprint, request
 from httpx import AsyncClient
 
@@ -30,11 +31,46 @@ async def get_friend_list(userid, **kwargs):
         )
     )
 
-    friends = result.data["friendslist"]["friends"]
-    for friend in friends:
-        friend.pop("relationship")
+    if result.data.get("friendslist"):
+        print("OK", file=stderr)
+        friends = result.data["friendslist"]["friends"]
+        for friend in friends:
+            friend.pop("relationship")
 
-    result.data = friends
+        result.data = friends
+    else:
+        print("NOT OK", file=stderr)
+        result.errors.append("Error fetching friends list")
+        result.success = False
+
+    if injected_client is None:
+        await client.aclose()
+    return dataclasses.asdict(result)
+
+
+@api.route("/<userid>/summary", methods=["GET"])
+@broker.ping(skip_on_failure=True)
+@cached(RedisCacheKeyPattern.USER_DATA, ["userid"], ["summary"])
+async def get_player_summary(userid, **kwargs):
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient()
+    result = prepare_response(
+        await client.get(
+            build_url(
+                SteamWebAPI.USER,
+                "GetPlayerSummaries",
+                "0002",
+                request.args.get("key", kwargs.get("key")),
+                steamids=userid,
+            )
+        )
+    )
+
+    player = result.data["response"]["players"][0]
+    player = clean_obj(player, entries=["avatar", "personaname"])
+
+    result.data.update({userid: player})
+    result.data.pop("response")
 
     if injected_client is None:
         await client.aclose()
@@ -104,17 +140,13 @@ async def get_owned_games(userid, **kwargs):
     )
     try:
         games = result.data["response"]["games"]
-        games = [
-            clean_obj(game, clean_mode="pop", entries=["img_icon_url"])
-            for game in games
-        ]
-        result.data.update({"steamid": userid, "games": {}})
 
+        games_dict = dict()
         for game in games:
             id = game.pop("appid")
-            result.data["games"].update({id: game})
+            games_dict.update({str(id): game})
 
-        result.data.pop("response")
+        result.data = games_dict
     except:
         result.success = False
         result.data = {}

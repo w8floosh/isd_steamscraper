@@ -4,7 +4,7 @@ from sys import stderr
 from typing import List, Literal
 from httpx import Limits
 
-DEFAULT_API_CLIENT_LIMITS = Limits(max_connections=5)
+DEFAULT_API_CLIENT_LIMITS = Limits(max_connections=20)
 CleanMode = Literal["take", "pop"]
 
 

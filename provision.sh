@@ -19,6 +19,6 @@ sudo systemctl enable docker
 #git clone $GIT_REPO /usr/src/app/steamscraper
 
 cd /vagrant
-sudo docker compose up -d
+# sudo docker compose up -d
 
 
