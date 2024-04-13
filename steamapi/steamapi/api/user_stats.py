@@ -35,7 +35,10 @@ async def get_achievement_score(userid, **kwargs):
                 key = list(data.keys())[0]
                 message.payload["games"].update({key: data.pop(key)})
 
-    message = RedisMessage(RedisMessageType.USER_ACHIEVEMENTS_SCORE.value, userid)
+    requester = kwargs.get("custom_req_data", {}).get("requester")
+    message = RedisMessage(
+        RedisMessageType.USER_ACHIEVEMENTS_SCORE.value, requester or userid
+    )
 
     injected_client = kwargs.get("session")
     client = injected_client or AsyncClient(limits=DEFAULT_API_CLIENT_LIMITS)
@@ -55,12 +58,14 @@ async def get_achievement_score(userid, **kwargs):
             key=request.args.get("key"),
             appid=game,
             session=client,
-            custom_req_data={"appid": game},
+            custom_req_data={"userid": userid, "appid": game},
         )
         for game in owned["data"]
     ]
 
-    message = await set_payload_from_requests(message, requests, set_callback)
+    message = await set_payload_from_requests(
+        message, requests, set_callback, DEFAULT_API_CLIENT_LIMITS.max_connections
+    )
 
     print("Sending request", file=stderr)
     # publish message to Redis
@@ -72,6 +77,43 @@ async def get_achievement_score(userid, **kwargs):
     if injected_client is None:
         await client.aclose()
     return dataclasses.asdict(response)
+
+
+async def get_achievement_score_from_userid_list(userids, **kwargs):
+    async def set_callback(scores: list, requests):
+        calls = [req["call"] for req in requests]
+        responses = await asyncio.gather(*calls)
+        for idx, result in enumerate(responses):
+            data = result.get("data", {})
+            try:
+                scores.append(
+                    {
+                        "steamid": requests[idx].get("steamid"),
+                        "score": data["score"],
+                    }
+                )
+            except:
+                continue
+
+    injected_client = kwargs.get("session")
+    client = injected_client or AsyncClient(limits=DEFAULT_API_CLIENT_LIMITS)
+
+    requests = [
+        {
+            "call": get_achievement_score(
+                userid,
+                key=request.args.get("key"),
+                session=client,
+                custom_req_data={"userid": userid},
+            ),
+            "steamid": userid,
+        }
+        for userid in userids
+    ]
+
+    return await set_payload_from_requests(
+        [], requests, set_callback, DEFAULT_API_CLIENT_LIMITS.max_connections
+    )
 
 
 @api.route("<userid>/favorite", methods=["GET"])

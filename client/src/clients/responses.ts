@@ -6,6 +6,7 @@ import {
   Category,
   Friend,
   Genre,
+  LeaderboardEntry,
   OwnedGame,
   PlayerSummary,
   RecentlyPlayedGame,
@@ -67,3 +68,5 @@ export class SteamAPIError extends Error {
     super(message);
   }
 }
+
+export type LeaderboardsAPIResponse = LeaderboardEntry[];

@@ -12,10 +12,10 @@ import { useAuthStore } from 'src/stores/auth';
 import { storeToRefs } from 'pinia';
 
 export default new (class AppsClient {
-  private endpoint_apps = '/stats/apps';
+  private endpoint_apps = '/stats/apps/';
   private endpoint_store = '/store';
+  private endpoint_news = '/news/';
 
-  private endpoint_news = '/news';
   async getAppList(
     max_results?: number,
     last_appid?: string
@@ -44,13 +44,12 @@ export default new (class AppsClient {
   }
 
   async getNews(
-    id: number,
+    appid: number,
     count?: number,
     maxlength?: number
   ): Promise<ISteamAPIResponse<AppNewsResponse>> {
-    const url = process.env.STEAMAPI_PROXY_URL + this.endpoint_news;
+    const url = process.env.STEAMAPI_PROXY_URL + this.endpoint_news + appid;
     const params = {
-      id,
       count,
       maxlength,
       key: storeToRefs(useAuthStore()).steamWebAPIToken.value,
@@ -73,15 +72,17 @@ export default new (class AppsClient {
   }
 
   async getDetails(
-    id: number,
+    appid: number,
     filters?: string,
     cc?: string,
     language?: string
   ): Promise<ISteamAPIResponse<AppDetailsResponse>> {
     const url =
-      process.env.STEAMAPI_PROXY_URL + this.endpoint_store + '/details';
+      process.env.STEAMAPI_PROXY_URL +
+      this.endpoint_store +
+      '/details/' +
+      appid;
     const params = {
-      id,
       filters,
       cc,
       language,
@@ -132,10 +133,10 @@ export default new (class AppsClient {
   }
 
   async getCurrentPlayers(
-    id: number
+    appid: number
   ): Promise<ISteamAPIResponse<NoCurrentPlayersResponse>> {
     const url =
-      process.env.STEAMAPI_PROXY_URL + this.endpoint_apps + id + '/current';
+      process.env.STEAMAPI_PROXY_URL + this.endpoint_apps + appid + '/current';
     const params = {
       key: storeToRefs(useAuthStore()).steamWebAPIToken.value,
     };

@@ -32,13 +32,14 @@ async def get_app_global_achievement_percentages(id, **kwargs):
             )
         )
     )
+    print(result)
+    if result.data.get("achievementpercentages"):
+        achievements = result.data["achievementpercentages"]["achievements"]
+        result.data.update({id: dict()})
+        for ach in achievements:
+            result.data[id].update({ach["name"]: ach["percent"]})
 
-    achievements = result.data["achievementpercentages"]["achievements"]
-    result.data.update({id: dict()})
-    for ach in achievements:
-        result.data[id].update({ach["name"]: ach["percent"]})
-
-    result.data.pop("achievementpercentages")
+        result.data.pop("achievementpercentages")
 
     if injected_client is None:
         await client.aclose()
@@ -66,10 +67,10 @@ async def get_no_current_players(id, **kwargs):
     return dataclasses.asdict(result)
 
 
-@_players.route("/<player>/achievements", methods=["GET"])
+@_players.route("/<userid>/achievements", methods=["GET"])
 @broker.ping(skip_on_failure=True)
-@cached(RedisCacheKeyPattern.USER_DATA, ["player"], ["achievements"], ["appid"])
-async def get_player_achievements(player, **kwargs):
+@cached(RedisCacheKeyPattern.USER_DATA, ["userid"], ["achievements"], ["appid"])
+async def get_player_achievements(userid, **kwargs):
     injected_client = kwargs.get("session")
     client = injected_client or AsyncClient()
     id = request.args.get("appid", kwargs.get("appid"))
@@ -80,7 +81,7 @@ async def get_player_achievements(player, **kwargs):
                 "GetPlayerAchievements",
                 "0001",
                 request.args.get("key", kwargs.get("key")),
-                steamid=player,
+                steamid=userid,
                 appid=id,
                 l=request.args.get("l", kwargs.get("l", "english")),
             )

@@ -14,12 +14,14 @@
             </div>
         </q-card-section>
         <!-- name center -->
-        <q-card-section class="app-details-card-section app-genres">
-            <q-chip outline v-for="genre in details.genres" :key="genre.id" :label="genre.description"/>
+        <q-card-section class="app-details-card-section">
+            <div style="place-self: center">Genres</div>
+            <q-chip outline class="app-genres" v-for="genre in details.genres" :key="genre.id" :label="genre.description"/>
         </q-card-section>
         <!-- last update bottom right -->
-        <q-card-section class="app-details-card-section app-update">
-            <q-chip outline v-for="category in details.categories" :key="category.id" :label="category.description"/>
+        <q-card-section class="app-details-card-section">
+            <div style="place-self: center">Categories</div>
+            <q-chip outline class="app-categories" v-for="category in details.categories" :key="category.id" :label="category.description"/>
         </q-card-section>
     </q-card>
 </template>
@@ -42,16 +44,17 @@ const priceOverview = computed(() => typeof props.details.price_overview === 'st
     }
     .app-details-card {
         display: grid;
-        height: 128px;
-        width: auto;
+        height: 174px;
         padding: 8px;
-        grid-template-columns: 1fr 192px;
-        grid-template-rows: 64px 64px;
+        width: auto;
+        grid-template-columns: 1fr 174px;
+        grid-template-rows: 64px 128px;
     }
 
     .app-price-overview {
         grid-column: 2;
-        grid-row: span 2;
+        grid-row: 1;
+        place-self: right;
         display: grid;
         grid-template-columns: 1fr 2fr;
         grid-template-rows: 1fr 1fr;
@@ -60,34 +63,23 @@ const priceOverview = computed(() => typeof props.details.price_overview === 'st
     .app-discount {
         grid-row: 1;
         grid-column: 1;
-        place-self: right center;
+        place-self: end center;
     }
 
     .app-initial-price {
         grid-row: 2;
         grid-column: 2;
-        place-self: start center;
+        place-self: end;
         text-decoration: line-through;
     }
 
     .app-discounted-price {
         grid-row: 1;
         grid-column: 2;
-        place-self: center
+        place-self: end
     }
 
     .app-genres, .app-categories {
-        display: flex
+        place-self: center end;
     }
 </style>
-
-<script setup lang="ts">
-import { computed } from 'vue';
-import { formatDate } from 'date-fns';
-const props = defineProps<{id: number, name: string, lastUpdate?: Date}>()
-
-const id = computed(() => props.id)
-const name = computed(() => props.name)
-const lastUpdate = computed(() => props.lastUpdate)
-
-</script>

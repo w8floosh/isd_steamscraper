@@ -31,6 +31,7 @@ class RedisCacheKeyPattern(Enum):
     COMPUTED_DATA = "computed*[0-9]"
 
     def resolve(self, args):
+        print("ARGS", args, file=stderr)
         result = self.value
         for arg in args:
             try:

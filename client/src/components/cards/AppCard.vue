@@ -1,5 +1,5 @@
 <template>
-    <q-card clickable bordered class="app-card" @click="$router.push(`/apps${id}`)">
+    <q-card clickable bordered class="app-card" @click="goToAppPage">
         <!-- id upper left corner -->
         <q-card-section class="app-card-section app-id">
             <span>{{ id }}</span>
@@ -53,10 +53,21 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { formatDate } from 'date-fns';
+import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import { useStateStore } from 'src/stores/state';
+
 const props = defineProps<{id: number, name: string, lastUpdate?: Date}>()
 
+const router = useRouter()
+const { app } = storeToRefs(useStateStore());
 const id = computed(() => props.id)
 const name = computed(() => props.name)
 const lastUpdate = computed(() => props.lastUpdate)
+
+const goToAppPage = () => {
+    app.value = {id: id.value, name: name.value, lastUpdate: lastUpdate.value}
+    router.push(`/apps/${id.value}`)
+}
 
 </script>

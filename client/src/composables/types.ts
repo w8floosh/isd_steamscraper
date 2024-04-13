@@ -4,6 +4,7 @@ import {
   IAppMetadata,
   IPlayerMetadata,
   IRecentlyPlayedGameMetadata,
+  ILeaderboardsData,
 } from 'src/components/models';
 
 export interface IUser {
@@ -63,6 +64,7 @@ export enum AuthenticationError {
 
 export type UserTab = 'games' | 'friends' | 'favorites' | 'achievements';
 export type UserGamesTab = 'forgottenGames' | 'allGames' | 'recentGames';
+export type LeaderboardsTab = keyof ILeaderboardsData;
 
 export type UserData = {
   recent?: IRecentlyPlayedGameMetadata[];

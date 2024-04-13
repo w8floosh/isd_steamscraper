@@ -6,6 +6,7 @@ import IndexPage from 'src/pages/IndexPage.vue';
 import AppsPage from 'src/pages/AppsPage.vue';
 import ErrorNotFound from 'src/pages/ErrorNotFound.vue';
 import OAuthPage from 'src/pages/OAuthPage.vue';
+import AppDataPage from 'src/pages/AppDataPage.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -52,7 +53,16 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/apps',
     component: MainLayout,
-    children: [{ path: '', component: AppsPage, name: 'App data' }],
+    children: [{ path: '', component: AppsPage, name: 'App list' }],
+    meta: {
+      requiresAuth: true,
+      icon: 'sports_esports',
+    },
+  },
+  {
+    path: '/apps/:id',
+    component: MainLayout,
+    children: [{ path: '', component: AppDataPage, name: 'App data' }],
     meta: {
       requiresAuth: true,
       icon: 'sports_esports',

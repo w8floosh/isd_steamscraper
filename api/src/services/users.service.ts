@@ -35,11 +35,13 @@ export class UsersService extends APIService {
   private getUserAchievementsScore(data: RedisMessageParsed) {
     const reply = new RedisMessage(data.consumer, data.requester, data.type);
     try {
-      const payload = data.payload as Record<
-        string,
-        { steamid: string; games: Record<string, any> }
-      >;
+      console.log(data.payload);
+      const payload = data.payload as {
+        steamid: string;
+        games: Record<string, any>;
+      };
       reply.payload.data = {
+        steamid: payload.steamid,
         score: Object.values(payload.games)
           .map((x: any) => (x.hasOwnProperty('length') ? x.length : 0))
           .reduce((acc, curr) => acc + curr),

@@ -37,7 +37,7 @@ def prepare_response(response: Response):
     if response.status_code == 200:
         return SteamAPIResponse(True, response.json())
     else:
-        return SteamAPIResponse(False, {}, [response.status_code])
+        return SteamAPIResponse(False, {}, [response.text])
 
 
 def clean_obj(obj: dict, clean_mode: CleanMode = "take", entries: list = []):

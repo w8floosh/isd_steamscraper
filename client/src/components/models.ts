@@ -16,7 +16,8 @@ export interface IAchievementMetadata {
   appName: string;
   apiName: string;
   name: string;
-  unlockTime: Date;
+  unlockTime?: Date;
+  globalCompletionPercentage?: number;
 }
 
 export interface IAppData {
@@ -24,7 +25,19 @@ export interface IAppData {
   details?: AppDetails;
   news?: AppNews[];
   players?: number;
-  achievements?: any;
+  achievements?: IAchievementMetadata[];
+}
+
+export interface ILeaderboardsData {
+  achievementScore: ILeaderboardEntry[];
+  playtime: ILeaderboardEntry[];
+  versatility: ILeaderboardEntry[];
+}
+
+export interface ILeaderboardEntry {
+  username: string;
+  steamId: string;
+  score: number;
 }
 
 export interface IRecentlyPlayedGameMetadata {

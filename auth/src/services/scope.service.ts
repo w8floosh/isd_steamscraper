@@ -7,13 +7,19 @@ import {
 } from '@jmondi/oauth2-server';
 import { RedisService } from './redis.service';
 import { RedisException, ScopeNotFoundException } from 'src/lib/errors';
-import { Injectable, OnModuleInit, UseInterceptors } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  UseInterceptors,
+} from '@nestjs/common';
 import { OAUTH_SCOPES, SCOPES_KEY } from 'src/lib/constants';
 import { RedisInterceptor } from 'src/controllers/interceptors/redis.interceptor';
 
 @Injectable()
 @UseInterceptors(RedisInterceptor)
 export class ScopeService implements OAuthScopeRepository, OnModuleInit {
+  private logger = new Logger(ScopeService.name);
   constructor(private readonly redisService: RedisService) {}
 
   async onModuleInit() {
@@ -24,6 +30,7 @@ export class ScopeService implements OAuthScopeRepository, OnModuleInit {
           id,
           JSON.stringify(data),
         );
+        this.logger.log('Initialized OAuth2 scope: ' + id);
       }
     } catch (e) {
       throw new RedisException(

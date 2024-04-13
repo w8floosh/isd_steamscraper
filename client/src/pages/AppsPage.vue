@@ -1,166 +1,27 @@
 <template>
     <q-page class="apps-page">
-        <AppCardList :apps="apps"/>
+        <q-card>
+            <q-card-section class="bg-primary text-white">
+                <AppCardList v-if="appList.length" :apps="appList"/>
+                <q-spinner-dots v-else color="white" size="40px"/>
+            </q-card-section>
+        </q-card>
     </q-page>
 </template>
 
 <script setup lang="ts">
 import { IAppMetadata } from 'src/components/models';
 import AppCardList from 'src/components/lists/AppCardList.vue';
+import { onMounted, ref } from 'vue';
+import { useAppsService } from 'src/composables/useAppsService';
 
-const apps: IAppMetadata[] = [
-    {
-        id: 10,
-        name: 'pippo',
-        lastUpdate: new Date()
-    },
-    {
-        id: 20,
-        name: 'pluto',
-        lastUpdate: new Date()
-    },
-    {
-        id: 30,
-        name: 'paperino',
-        lastUpdate: new Date()
-    },
-    {
-        id: 40,
-        name: 'diabolik',
-        lastUpdate: new Date()
-    },
-    {
-        id: 50,
-        name: 'nome molto molto molto molto lungo',
-        lastUpdate: new Date()
-    },
-    {
-        id: 10,
-        name: 'pippo',
-        lastUpdate: new Date()
-    },
-    {
-        id: 20,
-        name: 'pluto',
-        lastUpdate: new Date()
-    },
-    {
-        id: 30,
-        name: 'paperino',
-        lastUpdate: new Date()
-    },
-    {
-        id: 40,
-        name: 'diabolik',
-        lastUpdate: new Date()
-    },
-    {
-        id: 50,
-        name: 'nome molto molto molto molto lungo',
-        lastUpdate: new Date()
-    },
-    {
-        id: 10,
-        name: 'pippo',
-        lastUpdate: new Date()
-    },
-    {
-        id: 20,
-        name: 'pluto',
-        lastUpdate: new Date()
-    },
-    {
-        id: 30,
-        name: 'paperino',
-        lastUpdate: new Date()
-    },
-    {
-        id: 40,
-        name: 'diabolik',
-        lastUpdate: new Date()
-    },
-    {
-        id: 50,
-        name: 'nome molto molto molto molto lungo',
-        lastUpdate: new Date()
-    },
-    {
-        id: 10,
-        name: 'pippo',
-        lastUpdate: new Date()
-    },
-    {
-        id: 20,
-        name: 'pluto',
-        lastUpdate: new Date()
-    },
-    {
-        id: 30,
-        name: 'paperino',
-        lastUpdate: new Date()
-    },
-    {
-        id: 40,
-        name: 'diabolik',
-        lastUpdate: new Date()
-    },
-    {
-        id: 50,
-        name: 'nome molto molto molto molto lungo',
-        lastUpdate: new Date()
-    },
-    {
-        id: 10,
-        name: 'pippo',
-        lastUpdate: new Date()
-    },
-    {
-        id: 20,
-        name: 'pluto',
-        lastUpdate: new Date()
-    },
-    {
-        id: 30,
-        name: 'paperino',
-        lastUpdate: new Date()
-    },
-    {
-        id: 40,
-        name: 'diabolik',
-        lastUpdate: new Date()
-    },
-    {
-        id: 50,
-        name: 'nome molto molto molto molto lungo',
-        lastUpdate: new Date()
-    },
-    {
-        id: 10,
-        name: 'pippo',
-        lastUpdate: new Date()
-    },
-    {
-        id: 20,
-        name: 'pluto',
-        lastUpdate: new Date()
-    },
-    {
-        id: 30,
-        name: 'paperino',
-        lastUpdate: new Date()
-    },
-    {
-        id: 40,
-        name: 'diabolik',
-        lastUpdate: new Date()
-    },
-    {
-        id: 50,
-        name: 'nome molto molto molto molto lungo',
-        lastUpdate: new Date()
-    },
+const appList = ref<IAppMetadata[]>([])
+const { getAppList } = useAppsService()
+onMounted(async() => {
+    const list = await getAppList()
+    appList.value = Object.entries(list).map<IAppMetadata>(([id, app]) => ({id: parseInt(id), name: app.name, lastUpdate: new Date(app.last_modified * 1000)}))
+})
 
-]
 
 </script>
 

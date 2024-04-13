@@ -63,3 +63,8 @@ export type AppInfo = Pick<IAppMetadata, 'name'> & {
   last_modified: number;
   price_change_number: number;
 };
+
+export type LeaderboardEntry = {
+  steamid: string;
+  score: number;
+};

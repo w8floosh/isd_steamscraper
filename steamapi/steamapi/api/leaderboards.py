@@ -11,18 +11,22 @@ from ..broker.types import RedisMessage, RedisMessageType
 from ..api.users import get_owned_games, get_friend_list
 from ..api.utils import set_payload_from_requests
 from ..api.types import DEFAULT_API_CLIENT_LIMITS
-from ..api.user_stats import get_achievement_score
+from ..api.user_stats import (
+    get_achievement_score_from_userid_list,
+)
 
 api = Blueprint("leaderboards", __name__, url_prefix="/compute/stats/leaderboards")
 
 
 async def _set_payload_with_playtimes(userid, message: RedisMessage):
     async def set_callback(message: RedisMessage, requests):
-        responses = await asyncio.gather(*requests)
-        for result in responses:
+        calls = [req["call"] for req in requests]
+        responses = await asyncio.gather(*calls)
+        for idx, result in enumerate(responses):
+            print(requests[idx].get("steamid"), file=stderr)
             try:
-                steamid = result["data"]["steamid"]
-                games = result["data"]["games"]
+                steamid = requests[idx]["steamid"]
+                games = result["data"]
                 message.payload.update({steamid: dict()})
                 for id, game in games.items():
                     message.payload[steamid].update({id: game["playtime_forever"]})
@@ -36,34 +40,32 @@ async def _set_payload_with_playtimes(userid, message: RedisMessage):
             session=session,
             custom_req_data={"userid": userid},
         )
+        if not friendlist["success"]:
+            return dataclasses.asdict(friendlist)
+        friendlist["data"].append({"steamid": userid, "friend_since": 0})
 
         requests = [
-            get_owned_games(
-                friend["steamid"],
-                key=request.args.get("key"),
-                include_played_free_games=1,
-                session=session,
-                custom_req_data={"userid": friend["steamid"]},
-            )
+            {
+                "call": get_owned_games(
+                    friend["steamid"],
+                    key=request.args.get("key"),
+                    include_played_free_games=1,
+                    session=session,
+                    custom_req_data={"userid": friend["steamid"]},
+                ),
+                "steamid": friend["steamid"],
+            }
             for friend in friendlist["data"]
         ]
 
-        message = await set_payload_from_requests(
-            message,
-            requests,
-            set_callback,
+        message_result = await set_payload_from_requests(
+            message, requests, set_callback, DEFAULT_API_CLIENT_LIMITS.max_connections
         )
-    return message
+    return message_result
 
 
 @api.route("/friends/<userid>/gamerscore", methods=["GET"])
-@broker.ping()
 async def get_friends_achievement_score_leaderboard(userid):
-    async def set_callback(message: RedisMessage, requests):
-        responses = await asyncio.gather(*requests)
-        for result in responses:
-            message.payload.update({result["data"]["steamid"]: result["data"]["score"]})
-
     message = RedisMessage(
         RedisMessageType.LEADERBOARD_ACHIEVEMENTS_SCORE.value, userid
     )
@@ -75,21 +77,25 @@ async def get_friends_achievement_score_leaderboard(userid):
             session=session,
             custom_req_data={"userid": userid},
         )
-        requests = [
-            get_achievement_score(
-                friend["steamid"],
-                key=request.args.get("key"),
-                session=session,
-                custom_req_data={"userid": friend["steamid"]},
-            )
-            for friend in friendlist["data"][7:10]
-        ]
+        if not friendlist["success"]:
+            return dataclasses.asdict(friendlist)
+        friendlist["data"].append({"steamid": userid, "friend_since": 0})
 
-        message = await set_payload_from_requests(
-            message,
-            requests,
-            set_callback,
+        message.payload = await get_achievement_score_from_userid_list(
+            [friend["steamid"] for friend in friendlist["data"]],
+            session=session,
         )
+
+        # requests = [
+        #     get_achievement_score(
+        #         friend["steamid"],
+        #         key=request.args.get("key"),
+        #         session=session,
+        #         custom_req_data={"userid": friend["steamid"]},
+        #         requester=userid,
+        #     )
+        #     for friend in friendlist["data"]
+        # ]
 
     print("Sending request", file=stderr)
     # publish message to Redis
@@ -109,6 +115,8 @@ async def get_friends_playtime_leaderboard(userid):
     )
     print("Sending request", file=stderr)
     # publish message to Redis
+    print(message.payload, file=stderr)
+
     reqid = await send_request(message)
     print("Request sent with id ", reqid, file=stderr)
 

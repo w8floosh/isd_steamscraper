@@ -42,7 +42,7 @@ async def get_app_list(**kwargs):
     return dataclasses.asdict(result)
 
 
-@api.route("details", methods=["GET"])
+@api.route("details/<appid>", methods=["GET"])
 @broker.ping(skip_on_failure=True)
 @cached(RedisCacheKeyPattern.APP_DATA, ["appid"], ["details"])
 async def get_app_details(appid, **kwargs):

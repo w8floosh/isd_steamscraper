@@ -20,18 +20,19 @@ def build_json_path(path: List, args=[]):
 
 
 def extract_resolve_args(args, kw, view, query):
+    kwargs = {x: kw[x] for x in kw if x in [*args, "custom_req_data"]}
+
+    ext_args = kwargs.get("custom_req_data", {})
+    for ext_kwarg, ext_value in ext_args.items():
+        if ext_kwarg in args:
+            kwargs.update({ext_kwarg: ext_value})
+
     keys = [
-        *[value for kwarg, value in kw.items() if kwarg in args],
+        *[value for kwarg, value in kwargs.items() if kwarg in args],
         *[value for rarg, value in query.items() if rarg in args],
         *[value for varg, value in view.items() if varg in args],
     ]
     result = OrderedDict.fromkeys(keys)
-    ext_args = kw.get("custom_req_data")
-
-    if ext_args:
-        for arg, value in ext_args.items():
-            if arg in args:
-                result.update({value: None})
     return result
 
 

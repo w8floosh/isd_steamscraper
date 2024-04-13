@@ -11,6 +11,9 @@
         <q-card-section v-if="unlockedAt" class="achievement-card-section achievement-unlock-time">
             Unlock time: {{ formatDate(unlockedAt, 'dd/MM/yyyy hh:mm') }}
         </q-card-section>
+        <q-card-section v-else-if="completion" class="achievement-card-section achievement-completion">
+            Completed by {{ completion.toPrecision(4) }}% of players
+        </q-card-section>
     </q-card>
 </template>
 
@@ -22,8 +25,10 @@ interface ComponentProps {
     appName: string,
     name: string,
     unlockedAt?: Date
+    completion?: number
 }
-const props = defineProps<ComponentProps>()
+
+defineProps<ComponentProps>()
 
 </script>
 
@@ -54,7 +59,7 @@ const props = defineProps<ComponentProps>()
         color: black
     }
 
-    .achievement-unlock-time {
+    .achievement-unlock-time, .achievement-completion {
         grid-row: 3;
         grid-column: span 3;
         place-self: center end;

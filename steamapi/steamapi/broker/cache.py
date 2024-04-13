@@ -48,7 +48,6 @@ def cached(
                 readpath_args, kwargs, request.args, request.view_args
             )
             json_key = pattern.resolve(resolve_args)
-
             json_path = build_json_path(readpath)
             json_path_with_args = build_json_path(readpath, resolve_readpath_args)
             # 3. want to renew the cache
@@ -59,12 +58,13 @@ def cached(
                 # print("idletime for key ", json_key, " is ", idletime, file=stderr)
                 if idletime is None or idletime > 30:
                     result: dict = await func(*args, **kwargs)
-                    await write_cache(
-                        json_key,
-                        result.get("data"),
-                        json_path,
-                        ttl,
-                    )
+                    if result["success"]:
+                        await write_cache(
+                            json_key,
+                            result.get("data"),
+                            json_path,
+                            ttl,
+                        )
                     return result
 
             data: dict = {}

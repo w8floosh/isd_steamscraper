@@ -23,12 +23,6 @@ export const useDrawerOptions = () => {
       endpoint: '/apps',
     },
     {
-      title: 'Friends',
-      caption: 'Show your friend list',
-      icon: 'group',
-      endpoint: '/friends',
-    },
-    {
       title: 'Leaderboards',
       caption: 'Who is the best among you and your friends?',
       icon: 'leaderboard',

@@ -1,5 +1,6 @@
 import dataclasses
 import json
+from sys import stderr
 from quart import Blueprint, request
 from httpx import AsyncClient
 
@@ -30,11 +31,17 @@ async def get_friend_list(userid, **kwargs):
         )
     )
 
-    friends = result.data["friendslist"]["friends"]
-    for friend in friends:
-        friend.pop("relationship")
+    if result.data.get("friendslist"):
+        print("OK", file=stderr)
+        friends = result.data["friendslist"]["friends"]
+        for friend in friends:
+            friend.pop("relationship")
 
-    result.data = friends
+        result.data = friends
+    else:
+        print("NOT OK", file=stderr)
+        result.errors.append("Error fetching friends list")
+        result.success = False
 
     if injected_client is None:
         await client.aclose()
