@@ -1,3 +1,4 @@
+from sys import stderr
 from quart import Quart
 from quart.logging import getLogger
 from .api.stats import api as stats
@@ -24,6 +25,7 @@ logger = getLogger()
 async def redis_startup():
     from .broker import broker
 
+    print("PIPPO", file=stderr)
     try:
         await broker.connect()
     except Exception as e:

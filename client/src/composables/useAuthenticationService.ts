@@ -17,7 +17,7 @@ export const useAuthenticationService = () => {
   const auth_url = process.env.AUTH_SERVER_URL || auth.defaults.baseURL;
   const login = async (credentials: UserCredentials, redirect_uri: string) => {
     const state = getRandomCodeVerifier();
-    const authCode = await auth.post(auth_url + '/auth/login', credentials, {
+    const authCode = await auth.post(auth_url + '/login', credentials, {
       params: {
         response_type: 'code',
         client_id:
@@ -39,14 +39,14 @@ export const useAuthenticationService = () => {
   };
 
   const logout = async () => {
-    await auth.patch(auth_url + '/auth/logout', null, {
+    await auth.patch(auth_url + '/logout', null, {
       withCredentials: true,
     });
   };
 
   const resume = async (): Promise<SessionResponse | null> => {
     const session = await auth.get<SessionCookieVerifierResponse>(
-      auth_url + '/auth/verify',
+      auth_url + '/verify',
       {
         withCredentials: true,
       }
@@ -78,7 +78,7 @@ export const useAuthenticationService = () => {
   };
 
   const register = async (credentials: UserCredentials) => {
-    await auth.post(auth_url + '/auth/signup', credentials);
+    await auth.post(auth_url + '/signup', credentials);
   };
 
   const issueTokens = async (

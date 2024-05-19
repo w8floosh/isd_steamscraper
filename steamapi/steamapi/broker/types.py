@@ -87,6 +87,10 @@ class RedisManager:
         if self.connection is not None and await self.connection.ping():
             return self.connection
 
+        print(
+            f"redis://{self._login.get('host')}:{self._login.get('port')}/0",
+            file=stderr,
+        )
         # Create a new Redis connection
         self.connection = await from_url(
             f"redis://{self._login.get('host')}:{self._login.get('port')}/0"
@@ -138,3 +142,6 @@ class RedisManager:
             return wrapper
 
         return decorator
+
+    async def __adel__(self):
+        await self.disconnect()
