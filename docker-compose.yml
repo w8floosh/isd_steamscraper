@@ -68,13 +68,14 @@ services:
     build: ./steamapi
     restart: always
     ports: 
-      - "3002:3002"
+      - "8000:443"
     env_file:
       - ./steamapi/.env.prod
     container_name: steamapi
     depends_on:
       - api
       - nginx
+      - redis
     networks:
       - lbnet
       

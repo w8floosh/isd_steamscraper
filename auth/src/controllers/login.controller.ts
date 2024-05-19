@@ -34,7 +34,7 @@ import { RedisInterceptor } from './interceptors/redis.interceptor';
 import { Cookies } from 'src/lib/cookie.decorator';
 import { TokenService } from 'src/services/token.service';
 
-@Controller('auth')
+@Controller()
 @UseInterceptors(RedisInterceptor)
 export class LoginController {
   constructor(
