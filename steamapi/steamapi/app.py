@@ -25,7 +25,6 @@ logger = getLogger()
 async def redis_startup():
     from .broker import broker
 
-    print("PIPPO", file=stderr)
     try:
         await broker.connect()
     except Exception as e:

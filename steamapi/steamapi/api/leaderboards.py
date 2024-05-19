@@ -23,7 +23,6 @@ async def _set_payload_with_playtimes(userid, message: RedisMessage):
         calls = [req["call"] for req in requests]
         responses = await asyncio.gather(*calls)
         for idx, result in enumerate(responses):
-            print(requests[idx].get("steamid"), file=stderr)
             try:
                 steamid = requests[idx]["steamid"]
                 games = result["data"]
@@ -86,21 +85,8 @@ async def get_friends_achievement_score_leaderboard(userid):
             session=session,
         )
 
-        # requests = [
-        #     get_achievement_score(
-        #         friend["steamid"],
-        #         key=request.args.get("key"),
-        #         session=session,
-        #         custom_req_data={"userid": friend["steamid"]},
-        #         requester=userid,
-        #     )
-        #     for friend in friendlist["data"]
-        # ]
-
-    print("Sending request", file=stderr)
     # publish message to Redis
     reqid = await send_request(message)
-    print("Request sent with id ", reqid, file=stderr)
 
     response = await get_response(userid)
 
@@ -113,12 +99,8 @@ async def get_friends_playtime_leaderboard(userid):
     message = await _set_payload_with_playtimes(
         userid, RedisMessage(RedisMessageType.LEADERBOARD_PLAYTIME.value, userid)
     )
-    print("Sending request", file=stderr)
     # publish message to Redis
-    print(message.payload, file=stderr)
-
     reqid = await send_request(message)
-    print("Request sent with id ", reqid, file=stderr)
 
     response = await get_response(userid)
 
@@ -132,11 +114,9 @@ async def get_friends_versatility_score_leaderboard(userid):
         RedisMessage(RedisMessageType.LEADERBOARD_VERSATILITY_SCORE.value, userid),
     )
     # publish message to Redis
-    print("Sending request", file=stderr)
     # publish message to Redis
     reqid = await send_request(message)
     # add channel to kwargs when implementing auth
-    print("Request sent with id ", reqid, file=stderr)
 
     response = await get_response(userid)
 

@@ -58,7 +58,6 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = NOT_LOGGED;
       return;
     }
-    console.log(session);
     user.value = {
       username: session.user.username,
       email: session.user.email,

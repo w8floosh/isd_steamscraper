@@ -32,7 +32,6 @@ async def get_app_global_achievement_percentages(id, **kwargs):
             )
         )
     )
-    print(result)
     if result.data.get("achievementpercentages"):
         achievements = result.data["achievementpercentages"]["achievements"]
         result.data.update({id: dict()})
@@ -101,9 +100,6 @@ async def get_player_achievements(userid, **kwargs):
     if injected_client is None:
         await client.aclose()
 
-    print(
-        "DATACLASS->DICT\n", dataclasses.asdict(result), "\n__DICT__\n", result.__dict__
-    )
     result = dataclasses.asdict(result)
     return result
 
@@ -126,7 +122,6 @@ async def get_player_achievements_from_appid_list(player, **kwargs):
             SteamAPIResponse(False, {}, ["No app IDs were specified"])
         )
 
-    print(body["appids"])
     injected_client = kwargs.get("session")
     client = injected_client or AsyncClient()
 

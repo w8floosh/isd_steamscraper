@@ -50,7 +50,6 @@ export class AuthcodeService implements OAuthAuthCodeRepository {
       code,
       expiresAt,
     };
-    console.log('issued', authCode.code.split('.')[0]);
 
     return authCode;
   }
@@ -60,7 +59,6 @@ export class AuthcodeService implements OAuthAuthCodeRepository {
       authCode.code,
       JSON.stringify(authCode),
     );
-    console.log('persisted', result, authCode.code.split('.')[0]);
 
     if (!result) {
       throw new Error('Failed to persist authcode: ' + authCode.code);

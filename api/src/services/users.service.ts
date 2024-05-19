@@ -26,7 +26,6 @@ export class UsersService extends APIService {
       RedisMessageType.USER_FORGOTTEN_GAMES,
       this.getUserForgottenGames.bind(this),
     ],
-    // [RedisMessageType.USER_LIBRARY_VALUE, this.getUserLibraryValue.bind(this)],
   ]);
   constructor() {
     super();
@@ -35,7 +34,6 @@ export class UsersService extends APIService {
   private getUserAchievementsScore(data: RedisMessageParsed) {
     const reply = new RedisMessage(data.consumer, data.requester, data.type);
     try {
-      console.log(data.payload);
       const payload = data.payload as {
         steamid: string;
         games: Record<string, any>;

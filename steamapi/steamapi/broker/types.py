@@ -31,18 +31,13 @@ class RedisCacheKeyPattern(Enum):
     COMPUTED_DATA = "computed*[0-9]"
 
     def resolve(self, args):
-        print("ARGS", args, file=stderr)
         result = self.value
         for arg in args:
             try:
-                print("APP: ", arg, file=stderr)
                 if int(arg):
                     result = result.replace("*[0-9]", str(arg))
-            except Exception as e:
-                print("CATCH", e, file=stderr)
+            except Exception:
                 continue
-        if result == "app*[0-9]":
-            print("PANIC!", args, file=stderr)
         return result
 
 
@@ -87,10 +82,6 @@ class RedisManager:
         if self.connection is not None and await self.connection.ping():
             return self.connection
 
-        print(
-            f"redis://{self._login.get('host')}:{self._login.get('port')}/0",
-            file=stderr,
-        )
         # Create a new Redis connection
         self.connection = await from_url(
             f"redis://{self._login.get('host')}:{self._login.get('port')}/0"

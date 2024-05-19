@@ -62,10 +62,7 @@ async def get_response(user: str, mstimeout: int = 1000):
     from .types import CONSUMER_NAME, GROUP_NAME, RESPONSES_STREAM, REQUESTS_STREAM
 
     response_timeout = int(datetime.now(UTC).timestamp()) + 3 * mstimeout / 1000
-    # retries = 0
-    # while retries <= 3 or int(datetime.now(UTC).timestamp()) <= response_timeout:
     while int(datetime.now(UTC).timestamp()) <= response_timeout:
-        # print(f"attempt n${retries}")
         messages = await broker.connection.xread(
             dict({f"{RESPONSES_STREAM}_{CONSUMER_NAME}": "$"}),
             block=mstimeout,

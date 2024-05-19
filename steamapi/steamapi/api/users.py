@@ -32,14 +32,12 @@ async def get_friend_list(userid, **kwargs):
     )
 
     if result.data.get("friendslist"):
-        print("OK", file=stderr)
         friends = result.data["friendslist"]["friends"]
         for friend in friends:
             friend.pop("relationship")
 
         result.data = friends
     else:
-        print("NOT OK", file=stderr)
         result.errors.append("Error fetching friends list")
         result.success = False
 

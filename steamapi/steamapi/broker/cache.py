@@ -55,7 +55,6 @@ def cached(
             # add continuous renew protection
             if renew:
                 idletime = await broker.connection.object("IDLETIME", json_key)
-                # print("idletime for key ", json_key, " is ", idletime, file=stderr)
                 if idletime is None or idletime > 30:
                     result: dict = await func(*args, **kwargs)
                     if result["success"]:
@@ -79,11 +78,6 @@ def cached(
                     json_path_with_args,
                     no_escape=True,
                 )
-            print(json_key, json_path, json_path_with_args, file=stderr)
-            # print(
-            #     ("loaded cache" if data else "requesting data from the Web"),
-            #     file=stderr,
-            # )
 
             # 2. data is already cached
             if data:
@@ -104,7 +98,6 @@ def cached(
             else:
                 result: dict = await func(*args, **kwargs)
                 if result["success"]:
-                    # print(result.get("data"), file=stderr)
                     await write_cache(
                         json_key,
                         result.get("data"),
@@ -123,7 +116,6 @@ async def write_cache(key, value, path: str, ttl):
 
     await broker.connection.json().set(key, "$", {}, nx=True)
     if path:
-        # print(path, file=stderr)
         currentpath = ""
         for level in path.split(".")[1:]:
             currentpath = ".".join([currentpath, level])

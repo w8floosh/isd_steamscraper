@@ -111,9 +111,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
                 'payload',
                 JSON.stringify(computed.payload),
               );
-              this.logger.log(
-                `added: (in=${RESPONSE_STREAM.concat('_', parsed.consumer)}, what=${JSON.stringify(computed)})`,
-              );
             } else {
               this.logger.warn(
                 'Discarding invalid message ' + id + ' (corrupted data)',

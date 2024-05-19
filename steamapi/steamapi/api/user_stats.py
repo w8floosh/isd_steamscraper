@@ -67,10 +67,8 @@ async def get_achievement_score(userid, **kwargs):
         message, requests, set_callback, DEFAULT_API_CLIENT_LIMITS.max_connections
     )
 
-    print("Sending request", file=stderr)
     # publish message to Redis
     reqid = await send_request(message)
-    print("Request sent with id ", reqid, file=stderr)
 
     response = await get_response(userid)
 
@@ -123,9 +121,7 @@ async def get_user_favorite_genres_categories(userid):
         responses = await asyncio.gather(*requests)
         for res in responses:
             if len(res["errors"]):
-                print(res["errors"], file=stderr)
                 continue
-            print("DATA", res["data"], file=stderr)
             for appid, details in res["data"].items():
                 if (
                     not details
@@ -134,9 +130,7 @@ async def get_user_favorite_genres_categories(userid):
                 ):
                     continue
                 if owned.get(appid) is None and owned.get(int(appid)) is None:
-                    print("MISSING APP FROM LIBRARY", appid, file=stderr)
                     continue
-                print("APPID", appid, "DETAILS", details, file=stderr)
                 game = owned.get(appid) or owned.get(int(appid))
                 message.payload.update(
                     {
@@ -167,7 +161,6 @@ async def get_user_favorite_genres_categories(userid):
             for game in owned["data"]
         ]
 
-        print("BEFORE", message.payload, file=stderr)
         message = await set_payload_from_requests(
             message,
             requests,
@@ -175,12 +168,9 @@ async def get_user_favorite_genres_categories(userid):
             DEFAULT_API_CLIENT_LIMITS.max_connections,
             owned["data"],
         )
-        print("AFTER", message.payload, file=stderr)
-        print("Sending request", file=stderr)
         # publish message to Redis
 
         reqid = await send_request(message)
-        print("Request sent with id ", reqid, file=stderr)
 
         response = await get_response(userid)
 
@@ -212,10 +202,8 @@ async def get_user_forgotten_games(userid):
                 }
             )
 
-    print("Sending request", file=stderr)
     # publish message to Redis
     reqid = await send_request(message)
-    print("Request sent with id ", reqid, file=stderr)
 
     response = await get_response(userid)
     return dataclasses.asdict(response)

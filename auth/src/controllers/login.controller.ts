@@ -147,7 +147,6 @@ export class LoginController {
     @Body() credentials: UserCredentialsDto,
   ): Promise<void> {
     const { email, password, steamWebAPIToken, steamId } = credentials;
-    console.log(credentials);
     await this.userService.registerUser(
       User.create({
         id: email.concat(await hash(email, SALT_ROUNDS)),

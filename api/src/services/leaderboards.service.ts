@@ -35,7 +35,6 @@ export class LeaderboardsService extends APIService {
   private getAchievementsScoreLeaderboard(data: RedisMessageParsed) {
     const reply = new RedisMessage(data.consumer, data.requester, data.type);
     try {
-      console.log(data.payload);
       const user_data = data.payload as Array<{
         steamid: string;
         score: number;

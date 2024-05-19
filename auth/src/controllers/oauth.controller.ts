@@ -51,10 +51,7 @@ export class OAuthController {
       sameSite: 'none',
       encode: String,
     });
-    console.log(
-      response.getHeader('Set-Cookie').toString().length,
-      sessionCookie.length,
-    );
+
     return tokenResponse.body;
   }
 

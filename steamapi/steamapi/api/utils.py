@@ -74,8 +74,4 @@ def build_url(interface: APIType, call: str, version="0002", key="", *route, **k
         url = f"https://store.steampowered.com/{interface.value}/{call}{_extract_query(None, *route, **kwargs)}"
     else:
         url = f"http://api.steampowered.com/{interface.value}/{call}/v{version}{_extract_query(key, **kwargs)}"
-    print(
-        url,
-        file=stderr,
-    )
     return url

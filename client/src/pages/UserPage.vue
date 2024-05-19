@@ -267,15 +267,12 @@ const loadGames = async <T extends UserGamesTab>(tab: T) => {
 
 const loadAchievements = async (index: number, done: (stop?: boolean) => void) => {
     loading.value = true
-    console.log(lastApp.value)
     if (!userData.value.games){
         loading.value = false
         done()
         return
     }
     const startIndex = Math.min(10 * (index - 1), userData.value.games.length)
-    console.log(`startIndex: ${startIndex}, games.length: ${userData.value.games.length}`)
-
     const endIndex = startIndex + 10
     const slicedGames = userData.value.games.slice(startIndex, Math.min(endIndex, userData.value.games.length))
 
@@ -305,7 +302,6 @@ const loadAchievements = async (index: number, done: (stop?: boolean) => void) =
         return acc
     }, [] as IAchievementMetadata[])
 
-    console.log(achievementListMetadata)
 
     if (!achievementListMetadata.length){
         lastApp.value = slicedGames.slice(-1)[0].name

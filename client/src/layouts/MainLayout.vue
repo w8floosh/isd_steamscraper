@@ -209,7 +209,6 @@ function toggleLeftDrawer() {
 }
 
 const handleComponentError = (error: string) => {
-  console.log(error)
   errorDialogMessage.value = error
   errorDialogOpened.value = true
 }

@@ -18,9 +18,7 @@ export class UserMiddleware implements NestMiddleware {
 
     try {
       const decoded = await this.jwtService.verify(jid);
-      console.log(decoded.user);
       user = User.create(decoded.user as IUserData, 'summary');
-      console.log(user);
     } catch (e) {
       this.logger.error(e.message + ' for user ' + user.email);
       throw new JWTDecodeException(e.message);
